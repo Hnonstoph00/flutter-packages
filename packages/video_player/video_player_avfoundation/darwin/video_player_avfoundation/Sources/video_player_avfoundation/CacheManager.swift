@@ -38,6 +38,8 @@ import PINCache
     
     ///Setups cache server for HLS streams
     @objc public func setup(_ maxCacheSize: NSInteger){
+        print("LOG + start local host")
+        
         GCDWebServer.setLogLevel(4)
         let webServer = GCDWebServer()
         let cache = PINCache.shared
@@ -66,38 +68,39 @@ import PINCache
     }
     
     // MARK: - Logic
-    @objc public func preCacheURL(_ url: URL, cacheKey: String?, videoExtension: String?, withHeaders headers: Dictionary<NSObject,AnyObject>, completionHandler: ((_ success:Bool) -> Void)?) {
-        self.completionHandler = completionHandler
+    // @objc public func preCacheURL(_ url: URL, cacheKey: String?, videoExtension: String?, withHeaders headers: Dictionary<NSObject,AnyObject>, completionHandler: ((_ success:Bool) -> Void)?) {
+    //     self.completionHandler = completionHandler
         
-        let _key: String = cacheKey ?? url.absoluteString
-        // Make sure the item is not already being downloaded
-        if self._preCachedURLs[_key] == nil {
-            if let item = self.getCachingPlayerItem(url, cacheKey: _key, videoExtension: videoExtension, headers: headers){
-                if !self._existsInStorage {
-                    self._preCachedURLs[_key] = item
-                    item.download()
-                } else {
-                    self.completionHandler?(true)
-                }
-            } else {
-                self.completionHandler?(false)
-            }
-        } else {
-            self.completionHandler?(true)
-        }
-    }
+    //     let _key: String = cacheKey ?? url.absoluteString
+    //     // Make sure the item is not already being downloaded
+    //     if self._preCachedURLs[_key] == nil {
+    //         if let item = self.getCachingPlayerItem(url, cacheKey: _key, videoExtension: videoExtension, headers: headers){
+    //             if !self._existsInStorage {
+    //                 self._preCachedURLs[_key] = item
+    //                 item.download()
+    //             } else {
+    //                 self.completionHandler?(true)
+    //             }
+    //         } else {
+    //             self.completionHandler?(false)
+    //         }
+    //     } else {
+    //         self.completionHandler?(true)
+    //     }
+    // }
     
-    @objc public func stopPreCache(_ url: URL, cacheKey: String?, completionHandler: ((_ success:Bool) -> Void)?){
-        let _key: String = cacheKey ?? url.absoluteString
-        if self._preCachedURLs[_key] != nil {
-            let playerItem = self._preCachedURLs[_key]!
-            playerItem.stopDownload()
-            self._preCachedURLs.removeValue(forKey: _key)
-            self.completionHandler?(true)
-            return
-        }
-        self.completionHandler?(false)
-    }
+
+    // @objc public func stopPreCache(_ url: URL, cacheKey: String?, completionHandler: ((_ success:Bool) -> Void)?){
+    //     let _key: String = cacheKey ?? url.absoluteString
+    //     if self._preCachedURLs[_key] != nil {
+    //         let playerItem = self._preCachedURLs[_key]!
+    //         playerItem.stopDownload()
+    //         self._preCachedURLs.removeValue(forKey: _key)
+    //         self.completionHandler?(true)
+    //         return
+    //     }
+    //     self.completionHandler?(false)
+    // }
     
     ///Gets caching player item for normal playback.
     @objc public func getCachingPlayerItemForNormalPlayback(_ url: URL, cacheKey: String?, videoExtension: String?, headers: Dictionary<NSObject,AnyObject>) -> AVPlayerItem? {
@@ -113,7 +116,7 @@ import PINCache
     
     
     // Get a CachingPlayerItem either from the network if it's not cached or from the cache.
-    @objc public func getCachingPlayerItem(_ url: URL, cacheKey: String?,videoExtension: String?, headers: Dictionary<NSObject,AnyObject>) -> CachingPlayerItem? {
+    @objc private func getCachingPlayerItem(_ url: URL, cacheKey: String?,videoExtension: String?, headers: Dictionary<NSObject,AnyObject>) -> CachingPlayerItem? {
         let playerItem: CachingPlayerItem
         let _key: String = cacheKey ?? url.absoluteString
         // Fetch ongoing pre-cached url if it exists
