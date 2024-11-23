@@ -264,26 +264,26 @@ struct CacheItem: Codable {
 }
 
 @objc public class CacheManager: NSObject {
-//    static let shared = HLSVideoCache()
-
+    //    static let shared = HLSVideoCache()
+    
     private let webServer: GCDWebServer
     private let urlSession: URLSession
     private let cache: Storage<String, CacheItem>
     private let originURLKey = "__hls_origin_url"
     private let port: UInt = 1234
-
+    
     var completionHandler: ((_ success: Bool) -> Void)?
-
+    
     @objc override public init() {
         self.webServer = GCDWebServer()
         self.urlSession = URLSession.shared
-
+        
         // 200 mb disk cache
         let diskConfig = DiskConfig(name: "HLS_Video", expiry: .never, maxSize: 200 * 1024 * 1024)
-
+        
         // 25 objects in memory
         let memoryConfig = MemoryConfig(expiry: .never, countLimit: 25, totalCostLimit: 25)
-
+        
         guard let storage = try? Storage<String, CacheItem>(
             diskConfig: diskConfig,
             memoryConfig: memoryConfig,
@@ -291,31 +291,31 @@ struct CacheItem: Codable {
         ) else {
             fatalError("HLSVideoCache: unable to create cache")
         }
-
+        
         self.cache = storage
-
+        
         let documentDirectory = try? FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
         print("documentDirectory", documentDirectory?.path ?? "--")
         super.init()
-
+        
         addPlaylistHandler()
         start()
     }
-
+    
     deinit {
         stop()
     }
-
+    
     private func start() {
         guard !webServer.isRunning else { return }
         webServer.start(withPort: port, bonjourName: nil)
     }
-
+    
     private func stop() {
         guard webServer.isRunning else { return }
         webServer.stop()
     }
-
+    
     private func originURL(from request: GCDWebServerRequest) -> URL? {
         guard let encodedURLString = request.query?[originURLKey],
               let urlString = encodedURLString.removingPercentEncoding,
@@ -330,27 +330,27 @@ struct CacheItem: Codable {
         }
         return url
     }
-
+    
     // MARK: - Public functions
-
+    
     func clearCache() throws {
         try cache.removeAll()
     }
-
+    
     func reverseProxyURL(from originURL: URL) -> URL? {
         guard var components = URLComponents(url: originURL, resolvingAgainstBaseURL: false) else { return nil }
         components.scheme = "http"
         components.host = "127.0.0.1"
         components.port = Int(port)
-
+        
         let originURLQueryItem = URLQueryItem(name: originURLKey, value: originURL.absoluteString)
         components.queryItems = (components.queryItems ?? []) + [originURLQueryItem]
-
+        
         return components.url
     }
-
+    
     // MARK: - Request Handler
-
+    
     private func addPlaylistHandler() {
         webServer.addHandler(forMethod: "GET", pathRegex: "^/.*\\.*$", request: GCDWebServerRequest.self) { [weak self] (request: GCDWebServerRequest, completion) in
             guard let self = self,
@@ -366,7 +366,7 @@ struct CacheItem: Codable {
                 {
                     return completion(GCDWebServerDataResponse(data: playlistData, contentType: item.mimeType))
                 }
-
+                
                 // Cache m3u8 manifest
                 let task = self.urlSession.dataTask(with: originURL) { data, response, _ in
                     guard let data = data,
@@ -375,25 +375,25 @@ struct CacheItem: Codable {
                     else {
                         return completion(GCDWebServerErrorResponse(statusCode: 500))
                     }
-
+                    
                     let item = CacheItem(data: data, url: originURL, mimeType: mimeType)
                     self.saveCacheDataItem(item)
-
+                    
                     if let playlistData = self.reverseProxyPlaylist(with: item, forOriginURL: originURL) {
                         return completion(GCDWebServerDataResponse(data: playlistData, contentType: item.mimeType))
                     } else {
                         return completion(GCDWebServerErrorResponse(statusCode: 500))
                     }
                 }
-
+                
                 task.resume()
-
+                
             } else {
                 // Return cached segment
                 if let cachedItem = self.cachedDataItem(for: originURL) {
                     return completion(GCDWebServerDataResponse(data: cachedItem.data, contentType: cachedItem.mimeType))
                 }
-
+                
                 // Cache segment
                 let task = self.urlSession.dataTask(with: originURL) { data, response, _ in
                     guard let data = data,
@@ -402,39 +402,92 @@ struct CacheItem: Codable {
                     else {
                         return completion(GCDWebServerErrorResponse(statusCode: 500))
                     }
-
+                    
                     let mimeType = originURL.absoluteString.contains(".mp4") ? "video/mp4" : response.mimeType!
                     let item = CacheItem(data: data, url: originURL, mimeType: mimeType)
                     self.saveCacheDataItem(item)
-
+                    
                     return completion(GCDWebServerDataResponse(data: data, contentType: contentType))
                 }
-
+                
                 task.resume()
             }
         }
     }
-
+    
+    @objc public func precache(originURL: URL) {
+        if originURL.pathExtension == "m3u8" {
+            // Return cached m3u8 manifest
+            if let item = cachedDataItem(for: originURL),
+               let playlistData = reverseProxyPlaylist(with: item, forOriginURL: originURL)
+            {
+                return
+            }
+            
+            // Cache m3u8 manifest
+            let task = urlSession.dataTask(with: originURL) { data, response, _ in
+                guard let data = data,
+                      let response = response,
+                      let mimeType = response.mimeType
+                else {
+                    return
+                }
+                
+                let item = CacheItem(data: data, url: originURL, mimeType: mimeType)
+                self.saveCacheDataItem(item)
+                
+                if let playlistData = self.reverseProxyPlaylist(with: item, forOriginURL: originURL) {
+                    return
+                } else {
+                    return
+                }
+            }
+            
+            task.resume()
+            
+        } else {
+            // Return cached segment
+            if let cachedItem = cachedDataItem(for: originURL) {
+                return
+            }
+            
+            // Cache segment
+            let task = urlSession.dataTask(with: originURL) { data, response, _ in
+                guard let data = data,
+                      let response = response,
+                      let contentType = response.mimeType
+                else {
+                    return
+                }
+                
+                let mimeType = originURL.absoluteString.contains(".mp4") ? "video/mp4" : response.mimeType!
+                let item = CacheItem(data: data, url: originURL, mimeType: mimeType)
+                self.saveCacheDataItem(item)
+            }
+            
+            task.resume()
+        }
+    }
+    
     // MARK: - Manipulating Playlist
-
+    
     private func reverseProxyPlaylist(with item: CacheItem, forOriginURL originURL: URL) -> Data? {
         let original = String(data: item.data, encoding: .utf8)
         let parsed = original?
             .components(separatedBy: .newlines)
             .map { line in processPlaylistLine(line, forOriginURL: originURL) }
             .joined(separator: "\n")
-
-        print("LOG + parse \(parsed)")
+        
         return parsed?.data(using: .utf8)
     }
-
+    
     private func processPlaylistLine(_ line: String, forOriginURL originURL: URL) -> String {
         guard !line.isEmpty else { return line }
-
+        
         if line.hasPrefix("#") {
             return lineByReplacingURI(line: line, forOriginURL: originURL)
         }
-
+        
         if let originalSegmentURL = absoluteURL(from: line, forOriginURL: originURL),
            let reverseProxyURL = reverseProxyURL(from: originalSegmentURL)
         {
@@ -442,54 +495,54 @@ struct CacheItem: Codable {
         }
         return line
     }
-
+    
     private func lineByReplacingURI(line: String, forOriginURL originURL: URL) -> String {
         let uriPattern = try! NSRegularExpression(pattern: "URI=\"([^\"]*)\"")
         let lineRange = NSRange(location: 0, length: line.count)
         guard let result = uriPattern.firstMatch(in: line, options: [], range: lineRange) else { return line }
-
+        
         let uri = (line as NSString).substring(with: result.range(at: 1))
         guard let absoluteURL = absoluteURL(from: uri, forOriginURL: originURL) else { return line }
         guard let reverseProxyURL = reverseProxyURL(from: absoluteURL) else { return line }
-
+        
         return uriPattern.stringByReplacingMatches(in: line, options: [], range: lineRange, withTemplate: "URI=\"\(reverseProxyURL.absoluteString)\"")
     }
-
+    
     private func absoluteURL(from line: String, forOriginURL originURL: URL) -> URL? {
         if line.hasPrefix("http://") || line.hasPrefix("https://") {
             return URL(string: line)
         }
-
+        
         guard let scheme = originURL.scheme,
               let host = originURL.host
         else {
             print("Error: bad url")
             return nil
         }
-
+        
         let path: String
         if line.hasPrefix("/") {
             path = line
         } else {
             path = originURL.deletingLastPathComponent().appendingPathComponent(line).path
         }
-
+        
         return URL(string: scheme + "://" + host + path)?.standardized
     }
-
+    
     // MARK: - Caching
-
+    
     private func cachedDataItem(for resourceURL: URL) -> CacheItem? {
         let key = cacheKey(for: resourceURL)
         let item = try? cache.object(forKey: key)
         return item
     }
-
+    
     private func saveCacheDataItem(_ item: CacheItem) {
         let key = cacheKey(for: item.url)
         try? cache.setObject(item, forKey: key)
     }
-
+    
     private func cacheKey(for resourceURL: URL) -> String {
         // Hash key to avoid file name too long errors
         if #available(iOS 13.0, *) {
@@ -509,7 +562,7 @@ public extension CacheManager {
         item.preferredForwardBufferDuration = 10
         return item
     }
-
+    
     @objc func isVideoCached(_ url: URL) -> Bool {
         let cache = PINCache.shared
         // Check if the object exists in cache
@@ -518,26 +571,5 @@ public extension CacheManager {
         } else {
             return false // The video is not cached
         }
-    }
-}
-
-extension CacheManager: CachingPlayerItemDelegate {
-    func playerItem(_ playerItem: CachingPlayerItem, didFinishDownloadingData data: Data) {
-        // A track is downloaded. Saving it to the cache asynchronously.
-//        storage?.async.setObject(data, forKey: playerItem.cacheKey ?? playerItem.url.absoluteString, completion: { _ in })
-//        completionHandler?(true)
-    }
-
-    func playerItem(_ playerItem: CachingPlayerItem, didDownloadBytesSoFar bytesDownloaded: Int, outOf bytesExpected: Int) {
-        /// Is called every time a new portion of data is received.
-        let percentage = Double(bytesDownloaded) / Double(bytesExpected) * 100.0
-        let str = String(format: "%.1f%%", percentage)
-        // NSLog("Downloading... %@", str)
-    }
-
-    func playerItem(_ playerItem: CachingPlayerItem, downloadingFailedWith error: Error) {
-        /// Is called on downloading error.
-        NSLog("Error when downloading the file %@", error as NSError)
-        completionHandler?(false)
     }
 }

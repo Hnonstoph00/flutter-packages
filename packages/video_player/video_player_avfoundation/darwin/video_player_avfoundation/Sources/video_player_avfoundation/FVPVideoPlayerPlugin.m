@@ -780,35 +780,20 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
                                    error:(FlutterError **)error {
   NSURL * url = [NSURL URLWithString:options.uri];
   NSString * cacheKey = options.hlsCacheConfig[@"cacheKey"];
-  NSDictionary<NSString *, NSString *> * headers = options.httpHeaders;
-  AVPlayerItem *playerItem = [_cacheManager getCachingPlayerItemForNormalPlayback:url cacheKey:cacheKey videoExtension: nil headers:headers];
-  AVAsset *asset = [playerItem asset];
-  void (^assetCompletionHandler)(void) = ^{
-    NSLog(@"assetCompletionHandler ");
-    if ([asset statusOfValueForKey:@"tracks" error:nil] == AVKeyValueStatusLoaded) {
-      NSArray *tracks = [asset tracksWithMediaType:AVMediaTypeVideo];
-      if ([tracks count] > 0) {
-        AVAssetTrack *videoTrack = tracks[0];
-        void (^trackCompletionHandler)(void) = ^{
-          NSLog(@"trackCompletionHandler ");
-        };
-        [videoTrack loadValuesAsynchronouslyForKeys:@[ @"preferredTransform" ]
-                                  completionHandler:trackCompletionHandler];
-      }
-    }
-  };
-  _player = [AVPlayer playerWithPlayerItem:playerItem];
+  [_cacheManager precacheWithOriginURL:url];
+
   return @1;
 }
 
 - (nullable NSNumber *)isCached:(nonnull NSString *)cacheKey
                                   position:(NSInteger)position 
                                   length:(NSInteger)length
-                                  error:(FlutterError **)error {
-  NSLog(cacheKey);
-  NSURL * url = [NSURL URLWithString:cacheKey];
-  [_cacheManager isVideoCached:url];
-  return @1;
+                          error:(FlutterError **)error {
+    NSLog(cacheKey);
+    NSURL * url = [NSURL URLWithString:cacheKey];
+    [_cacheManager isVideoCached:url];
+    BOOL isCached = [_cacheManager isVideoCached:url];
+    return @(isCached);
 }
 
 - (void)initCache:(NSInteger)maxCacheSize error:(FlutterError **)error {
