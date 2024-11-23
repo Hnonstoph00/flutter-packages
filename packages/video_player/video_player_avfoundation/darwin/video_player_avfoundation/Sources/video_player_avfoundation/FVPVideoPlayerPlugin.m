@@ -816,7 +816,7 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
     return;
   }
   _cacheManager = [[CacheManager alloc] init];
-  [_cacheManager setup:maxCacheSize];
+  // [_cacheManager setup:maxCacheSize];
   self.isCacheInitialized = YES;
 }
 
