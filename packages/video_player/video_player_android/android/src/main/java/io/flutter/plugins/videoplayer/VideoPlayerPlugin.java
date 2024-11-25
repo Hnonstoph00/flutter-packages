@@ -5,6 +5,7 @@
 package io.flutter.plugins.videoplayer;
 
 import android.content.Context;
+import android.net.Uri;
 import android.os.Build;
 import android.util.LongSparseArray;
 
@@ -187,7 +188,7 @@ public class VideoPlayerPlugin implements FlutterPlugin, AndroidVideoPlayerApi {
             }
         }
         final VideoAsset videoAsset = VideoAsset.fromRemoteUrl(arg.getUri(), streamingFormat, httpHeaders, options);
-        final boolean result = VideoPlayer.preCache(flutterState.applicationContext, videoAsset, options);
+        final boolean result = VideoPlayer.preCache(flutterState.applicationContext, videoAsset, options, Uri.parse(arg.getUri()));
         return new PreCacheMessage.Builder().setIsSuccess(result).build();
     }
 

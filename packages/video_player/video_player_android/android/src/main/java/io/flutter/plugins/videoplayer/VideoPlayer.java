@@ -8,6 +8,7 @@ import static androidx.media3.common.Player.REPEAT_MODE_ALL;
 import static androidx.media3.common.Player.REPEAT_MODE_OFF;
 
 import android.content.Context;
+import android.net.Uri;
 import android.util.Log;
 import android.view.Surface;
 
@@ -91,38 +92,12 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
   static boolean preCache(
           Context context,
           VideoAsset asset,
-          VideoPlayerOptions options) {
+          VideoPlayerOptions options, Uri uri) {
       if (options.useCache) {
-          HlsMediaSource.Factory mediaSourceFactory = (HlsMediaSource.Factory) asset.getMediaSourceFactory(context);
-          mediaSourceFactory.createMediaSource(asset.getMediaItem());
-          ExoPlayer.Builder builder = new ExoPlayer.Builder(context).setMediaSourceFactory(mediaSourceFactory);
-          DefaultLoadControl.Builder loadBuilder = new DefaultLoadControl.Builder();
-          loadBuilder.setBufferDurationsMs(
-                  options.minBufferMs,
-                  options.maxBufferMs,
-                  options.bufferForPlaybackMs,
-                  options.bufferForPlaybackAfterRebufferMs
-          );
-          DefaultLoadControl loadControl = loadBuilder.build();
-          builder.setLoadControl(loadControl);
-          ExoPlayer exoPlayer = builder.build();
-          exoPlayer.setMediaItem(asset.getMediaItem());
-          exoPlayer.prepare();
-          // Pause immediately to prevent playback
-          exoPlayer.pause();
-          // Add a listener to monitor the caching progress
-          exoPlayer.addListener(new Player.Listener() {
-              @Override
-              public void onPlaybackStateChanged(int playbackState) {
-                  if (playbackState == Player.STATE_READY) {
-                      // The player has buffered all available segments.
-                      // You can check buffering progress here or monitor cache usage.
-                      // If the content is fully buffered, you can stop the player.
-                      exoPlayer.release(); // Release the player when done
-                  }
-              }
-          });
-          return true;
+        PreloadHelper preloadHelper = new PreloadHelper(context,uri);
+        preloadHelper.preCacheVideoBlocking();
+
+        return true;
       }
       return false;
   }
