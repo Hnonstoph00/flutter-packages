@@ -16,92 +16,36 @@ import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.offline.HlsDownloader
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
 @UnstableApi
 class PreloadHelper(private val context: Context, private val uri: Uri) {
 
-    fun preCacheVideoBlocking() {
-        kotlinx.coroutines.runBlocking {
-            preCacheVideo()
-        }
-    }
-    companion object {
-        const val TAG = "PreloadHelper"
-        const val CACHE_SIZE = 100L * 1024 * 1024 // 100 MB
-        private var cacheInstance: SimpleCache? = null
-        const val PRE_CACHE_SIZE = 1 * 1024 * 1024L // 1 MB
-    }
-
     private val cache: Cache by lazy {
-        cacheInstance ?: run {
-            val exoCacheDir = File(context.cacheDir, "exo")
-            if (!exoCacheDir.exists()) exoCacheDir.mkdirs()
-            val evictor = LeastRecentlyUsedCacheEvictor(CACHE_SIZE)
-            SimpleCache(exoCacheDir, evictor, ExoDatabaseProvider(context)).also {
-                cacheInstance = it
-            }
-        }
-    }
-
-    private val upstreamDataSourceFactory by lazy {
-        DefaultDataSourceFactory(context, "Android")
+        CacheManager.getCache(context)
     }
 
     private val cacheDataSourceFactory by lazy {
-        CacheDataSource.Factory()
-            .setCache(cache)
-            .setUpstreamDataSourceFactory(upstreamDataSourceFactory)
-            .setCacheWriteDataSinkFactory(
-                CacheDataSink.Factory().setCache(cache).setFragmentSize(CacheDataSink.DEFAULT_FRAGMENT_SIZE)
-            )
-            .setEventListener(object : CacheDataSource.EventListener {
-                override fun onCachedBytesRead(cacheSizeBytes: Long, cachedBytesRead: Long) {
-                    Log.d(TAG, "onCachedBytesRead. cacheSizeBytes:$cacheSizeBytes, cachedBytesRead: $cachedBytesRead")
-                }
-
-                override fun onCacheIgnored(reason: Int) {
-                    Log.d(TAG, "onCacheIgnored. reason:$reason")
-                }
-            })
+        CacheDataSourceFactoryManager.getInstance(context, cache)
     }
-
-    private val player by lazy {
-        ExoPlayer.Builder(context)
-            .build().apply {
-                repeatMode = Player.REPEAT_MODE_OFF
-                playWhenReady = true
-                addListener(object : Player.Listener {
-                    override fun onPlayerStateChanged(playWhenReady: Boolean, playbackState: Int) {
-                        super.onPlayerStateChanged(playWhenReady, playbackState)
-                        Log.d(
-                            TAG,
-                            "onPlayerStateChanged. playWhenReady: $playWhenReady, playbackState: $playbackState)"
-                        )
-                    }
-                })
-            }
-    }
-
-
-    private val cacheStreamKeys = arrayListOf(
-        StreamKey(0, 1),
-        StreamKey(1, 1),
-        StreamKey(2, 1),
-        StreamKey(3, 1),
-        StreamKey(4, 1)
-    )
 
     private val downloader by lazy {
         HlsDownloader(
             MediaItem.Builder()
                 .setUri(uri)
-                .setStreamKeys(cacheStreamKeys)
                 .build(),
             cacheDataSourceFactory
         )
+    }
+
+    fun preCacheVideoBlocking() {
+        CoroutineScope(Dispatchers.Main).launch {
+            preCacheVideo()
+        }
     }
 
     private fun cancelPreCache() {
@@ -110,22 +54,81 @@ class PreloadHelper(private val context: Context, private val uri: Uri) {
 
     private suspend fun preCacheVideo() = withContext(Dispatchers.IO) {
         runCatching {
-            // Check if enough data is already cached
             if (cache.isCached(uri.toString(), 0, PRE_CACHE_SIZE)) {
                 Log.d(TAG, "Video has been cached. Skipping download.")
                 return@runCatching
             }
 
             downloader.download { contentLength, bytesDownloaded, percentDownloaded ->
-                if (bytesDownloaded >= PRE_CACHE_SIZE) downloader.cancel()
-                Log.d(
-                    TAG,
-                    "ContentLength: $contentLength, BytesDownloaded: $bytesDownloaded, PercentDownloaded: $percentDownloaded"
-                )
+                if (bytesDownloaded >= PRE_CACHE_SIZE) cancelPreCache()
+                Log.d(TAG, " uri: $uri ContentLength: $contentLength, BytesDownloaded: $bytesDownloaded, PercentDownloaded: $percentDownloaded")
             }
         }.onFailure {
             if (it is InterruptedException) return@onFailure
             Log.e(TAG, "Video cache failed: ${it.message}", it)
         }
     }
+
+    companion object {
+        private const val TAG = "CacheDataSource"
+        private const val PRE_CACHE_SIZE = 1 * 512 * 1024L // 1 MB
+    }
 }
+
+
+
+@UnstableApi
+object CacheManager {
+    private const val TAG = "CacheManager"
+    const val CACHE_SIZE = 100L * 1024 * 1024 // 100 MB
+    private var cacheInstance: SimpleCache? = null
+
+    fun getCache(context: Context): Cache {
+        if (cacheInstance == null) {
+            synchronized(this) {
+                if (cacheInstance == null) {
+                    val exoCacheDir = File(context.cacheDir, "exo")
+                    if (!exoCacheDir.exists()) exoCacheDir.mkdirs()
+                    val evictor = LeastRecentlyUsedCacheEvictor(CACHE_SIZE)
+                    cacheInstance = SimpleCache(exoCacheDir, evictor, ExoDatabaseProvider(context))
+                }
+            }
+        }
+        return cacheInstance!!
+    }
+}
+
+@UnstableApi
+class CacheDataSourceFactoryManager(private val context: Context) {
+    private val upstreamDataSourceFactory: DefaultDataSourceFactory by lazy {
+        DefaultDataSourceFactory(context, "Android")
+    }
+
+    companion object {
+        private var cacheDataSourceFactory: CacheDataSource.Factory? = null
+
+        fun getInstance(context: Context, cache: Cache): CacheDataSource.Factory {
+            if (cacheDataSourceFactory == null) {
+                cacheDataSourceFactory = CacheDataSource.Factory()
+                    .setCache(cache)
+                    .setUpstreamDataSourceFactory(DefaultDataSourceFactory(context, "Android"))
+                    .setCacheWriteDataSinkFactory(
+                        CacheDataSink.Factory()
+                            .setCache(cache)
+                            .setFragmentSize(CacheDataSink.DEFAULT_FRAGMENT_SIZE)
+                    )
+                    .setEventListener(object : CacheDataSource.EventListener {
+                        override fun onCachedBytesRead(cacheSizeBytes: Long, cachedBytesRead: Long) {
+                            Log.d("CacheDataSource", "onCachedBytesRead: cacheSizeBytes=$cacheSizeBytes, cachedBytesRead=$cachedBytesRead")
+                        }
+
+                        override fun onCacheIgnored(reason: Int) {
+                            Log.d("CacheDataSource", "onCacheIgnored: reason=$reason")
+                        }
+                    })
+            }
+            return cacheDataSourceFactory!!
+        }
+    }
+}
+

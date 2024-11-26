@@ -12,10 +12,13 @@ import androidx.annotation.OptIn;
 import androidx.annotation.VisibleForTesting;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.MimeTypes;
+import androidx.media3.common.util.Log;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.datasource.DataSource;
 import androidx.media3.datasource.DefaultDataSource;
 import androidx.media3.datasource.DefaultHttpDataSource;
+import androidx.media3.datasource.cache.Cache;
+import androidx.media3.datasource.cache.CacheDataSource;
 import androidx.media3.exoplayer.hls.HlsMediaSource;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.exoplayer.source.MediaSource;
@@ -76,9 +79,18 @@ final class HttpVideoAsset extends VideoAsset {
     @OptIn(markerClass = UnstableApi.class)
     @Override
     MediaSource.Factory getMediaSourceFactory(Context context) {
-        if(this.videoPlayerOptions.useCache){
-            DataSource.Factory factory = getHlsCacheDataSourceFactory(context);
-            return new HlsMediaSource.Factory(factory);
+        if (this.videoPlayerOptions.useCache) {
+            Log.d("VideoPlayer", "Using HlsMediaSource.Factory with Cache");
+
+            // Get or initialize the cache
+            Cache cache = CacheManager.INSTANCE.getCache(context);
+
+            // Initialize CacheDataSource.Factory using CacheDataSourceFactoryManager
+            CacheDataSourceFactoryManager cacheDataSourceFactoryManager = new CacheDataSourceFactoryManager(context);
+            CacheDataSource.Factory cacheFactory = CacheDataSourceFactoryManager.Companion.getInstance(context, cache);
+
+            // Return HlsMediaSource.Factory with caching
+            return new HlsMediaSource.Factory(cacheFactory);
         }
         return getMediaSourceFactory(context, new DefaultHttpDataSource.Factory());
     }

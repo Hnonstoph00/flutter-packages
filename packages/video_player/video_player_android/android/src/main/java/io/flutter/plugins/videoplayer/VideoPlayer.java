@@ -23,13 +23,17 @@ import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackParameters;
 import androidx.media3.common.Player;
 import androidx.media3.common.util.UnstableApi;
+import androidx.media3.datasource.cache.Cache;
+import androidx.media3.datasource.cache.CacheDataSource;
 import androidx.media3.exoplayer.DefaultLoadControl;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.hls.HlsMediaSource;
+import androidx.media3.exoplayer.source.MediaSource;
 
 import io.flutter.view.TextureRegistry;
 
 final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
+  @NonNull private final Context context;
   @NonNull private final ExoPlayerProvider exoPlayerProvider;
   @NonNull private final MediaItem mediaItem;
   @NonNull private final TextureRegistry.SurfaceProducer surfaceProducer;
@@ -48,6 +52,7 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
    * @param options options for playback.
    * @return a video player instance.
    */
+  @OptIn(markerClass = UnstableApi.class)
   @NonNull
   static VideoPlayer create(
       @NonNull Context context,
@@ -55,13 +60,13 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
       @NonNull TextureRegistry.SurfaceProducer surfaceProducer,
       @NonNull VideoAsset asset,
       @NonNull VideoPlayerOptions options) {
-    return new VideoPlayer(
+    return new VideoPlayer(context,
         () -> {
           ExoPlayer.Builder builder;
           if (options.useCache) {
-              HlsMediaSource.Factory mediaSourceFactory = (HlsMediaSource.Factory) asset.getMediaSourceFactory(context);
-              mediaSourceFactory.createMediaSource(asset.getMediaItem());
-              builder = new ExoPlayer.Builder(context).setMediaSourceFactory(mediaSourceFactory);
+
+              builder = new ExoPlayer.Builder(context);
+
           } else {
               builder = new ExoPlayer.Builder(context).setMediaSourceFactory(asset.getMediaSourceFactory(context));
           }
@@ -74,6 +79,7 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
           );
           DefaultLoadControl loadControl = loadBuilder.build();
           builder.setLoadControl(loadControl);
+
           return builder.build();
         },
         events,
@@ -114,11 +120,14 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
 
   @VisibleForTesting
   VideoPlayer(
+          @NonNull Context context,
       @NonNull ExoPlayerProvider exoPlayerProvider,
       @NonNull VideoPlayerCallbacks events,
       @NonNull TextureRegistry.SurfaceProducer surfaceProducer,
       @NonNull MediaItem mediaItem,
-      @NonNull VideoPlayerOptions options) {
+      @NonNull VideoPlayerOptions options
+      ) {
+    this.context = context;
     this.exoPlayerProvider = exoPlayerProvider;
     this.videoPlayerEvents = events;
     this.surfaceProducer = surfaceProducer;
@@ -147,9 +156,20 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
     exoPlayer.release();
   }
 
-  private ExoPlayer createVideoPlayer() {
+    @OptIn(markerClass = UnstableApi.class)
+    private ExoPlayer createVideoPlayer() {
     ExoPlayer exoPlayer = exoPlayerProvider.get();
-    exoPlayer.setMediaItem(mediaItem);
+    exoPlayer.setPlayWhenReady(false);
+    Cache cache = CacheManager.INSTANCE.getCache(context);
+
+    CacheDataSource.Factory dataSourceFactory = CacheDataSourceFactoryManager.Companion.getInstance(context, cache);
+    MediaSource mediaSource = new HlsMediaSource.Factory(dataSourceFactory)
+            .setAllowChunklessPreparation(true)
+            .createMediaSource(mediaItem);
+
+
+    exoPlayer.setMediaSource(mediaSource);
+
     exoPlayer.prepare();
 
     exoPlayer.setVideoSurface(surfaceProducer.getSurface());
