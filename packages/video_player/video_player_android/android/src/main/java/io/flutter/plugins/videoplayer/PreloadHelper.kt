@@ -71,7 +71,7 @@ class PreloadHelper(private val context: Context, private val uri: Uri) {
 
     companion object {
         private const val TAG = "CacheDataSource"
-        private const val PRE_CACHE_SIZE = 1 * 512 * 1024L // 1 MB
+        private const val PRE_CACHE_SIZE = 1 * 200 * 1024L // 1 MB
     }
 }
 

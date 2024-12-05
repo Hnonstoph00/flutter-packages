@@ -64,15 +64,11 @@ class VideoPlayerValue {
   });
 
   /// Returns an instance for a video that hasn't been loaded.
-  const VideoPlayerValue.uninitialized()
-      : this(duration: Duration.zero, isInitialized: false);
+  const VideoPlayerValue.uninitialized() : this(duration: Duration.zero, isInitialized: false);
 
   /// Returns an instance with the given [errorDescription].
   const VideoPlayerValue.erroneous(String errorDescription)
-      : this(
-            duration: Duration.zero,
-            isInitialized: false,
-            errorDescription: errorDescription);
+      : this(duration: Duration.zero, isInitialized: false, errorDescription: errorDescription);
 
   /// This constant is just to indicate that parameter is not passed to [copyWith]
   /// workaround for this issue https://github.com/dart-lang/language/issues/2009
@@ -189,9 +185,7 @@ class VideoPlayerValue {
       volume: volume ?? this.volume,
       playbackSpeed: playbackSpeed ?? this.playbackSpeed,
       rotationCorrection: rotationCorrection ?? this.rotationCorrection,
-      errorDescription: errorDescription != _defaultErrorDescription
-          ? errorDescription
-          : this.errorDescription,
+      errorDescription: errorDescription != _defaultErrorDescription ? errorDescription : this.errorDescription,
       isCompleted: isCompleted ?? this.isCompleted,
     );
   }
@@ -273,9 +267,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   /// null. The [package] argument must be non-null when the asset comes from a
   /// package and null otherwise.
   VideoPlayerController.asset(this.dataSource,
-      {this.package,
-      Future<ClosedCaptionFile>? closedCaptionFile,
-      this.videoPlayerOptions})
+      {this.package, Future<ClosedCaptionFile>? closedCaptionFile, this.videoPlayerOptions})
       : _closedCaptionFileFuture = closedCaptionFile,
         dataSourceType = DataSourceType.asset,
         formatHint = null,
@@ -398,21 +390,18 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
 
   /// PreCache video without playing it.
   static Future<bool?> preCache(String url,
-      {VideoPlayerOptions? videoPlayerOptions,
-      Map<String, String> httpHeaders = const <String, String>{}}) async {
+      {VideoPlayerOptions? videoPlayerOptions, Map<String, String> httpHeaders = const <String, String>{}}) async {
     final DataSource dataSource = DataSource(
       sourceType: DataSourceType.network,
       uri: url,
       httpHeaders: httpHeaders,
     );
     return _videoPlayerPlatform.preCache(dataSource,
-        hlsCacheConfig: videoPlayerOptions?.hlsCacheConfig,
-        bufferingConfig: videoPlayerOptions?.bufferingConfig);
+        hlsCacheConfig: videoPlayerOptions?.hlsCacheConfig, bufferingConfig: videoPlayerOptions?.bufferingConfig);
   }
 
   /// Check if a video is cached or not
-  static Future<bool> isCached(String cacheKey,
-      {int position = 0, int length = 100}) async {
+  static Future<bool> isCached(String cacheKey, {int position = 0, int length = 100}) async {
     return _videoPlayerPlatform.isCached(cacheKey, position, length);
   }
 
@@ -423,8 +412,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
 
   /// Attempts to open the given [dataSource] and load metadata about the video.
   Future<void> initialize() async {
-    final bool allowBackgroundPlayback =
-        videoPlayerOptions?.allowBackgroundPlayback ?? false;
+    final bool allowBackgroundPlayback = videoPlayerOptions?.allowBackgroundPlayback ?? false;
     if (!allowBackgroundPlayback) {
       _lifeCycleObserver = _VideoAppLifeCycleObserver(this);
     }
@@ -460,8 +448,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     }
 
     if (videoPlayerOptions?.mixWithOthers != null) {
-      await _videoPlayerPlatform
-          .setMixWithOthers(videoPlayerOptions!.mixWithOthers);
+      await _videoPlayerPlatform.setMixWithOthers(videoPlayerOptions!.mixWithOthers);
     }
 
     _textureId = (await _videoPlayerPlatform.create(dataSourceDescription,
@@ -523,8 +510,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
           value = value.copyWith(isBuffering: false);
         case VideoEventType.isPlayingStateUpdate:
           if (event.isPlaying ?? false) {
-            value =
-                value.copyWith(isPlaying: event.isPlaying, isCompleted: false);
+            value = value.copyWith(isPlaying: event.isPlaying, isCompleted: false);
           } else {
             value = value.copyWith(isPlaying: event.isPlaying);
           }
@@ -546,9 +532,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
       }
     }
 
-    _eventSubscription = _videoPlayerPlatform
-        .videoEventsFor(_textureId)
-        .listen(eventListener, onError: errorListener);
+    _eventSubscription = _videoPlayerPlatform.videoEventsFor(_textureId).listen(eventListener, onError: errorListener);
     return initializingCompleter.future;
   }
 
@@ -1021,8 +1005,7 @@ class _VideoScrubberState extends State<VideoScrubber> {
         seekToRelativePosition(details.globalPosition);
       },
       onHorizontalDragEnd: (DragEndDetails details) {
-        if (_controllerWasPlaying &&
-            controller.value.position != controller.value.duration) {
+        if (_controllerWasPlaying && controller.value.position != controller.value.duration) {
           controller.play();
         }
       },
@@ -1185,7 +1168,14 @@ class ClosedCaption extends StatelessWidget {
   /// [VideoPlayerValue.caption].
   ///
   /// If [text] is null or empty, nothing will be displayed.
-  const ClosedCaption({super.key, this.text, this.textStyle});
+  const ClosedCaption({
+    super.key,
+    this.text,
+    this.textStyle,
+    this.boxDecoration,
+    this.textAlignment,
+    this.textPadding,
+  });
 
   /// The text that will be shown in the closed caption, or null if no caption
   /// should be shown.
@@ -1197,6 +1187,9 @@ class ClosedCaption extends StatelessWidget {
   /// If null, defaults to [DefaultTextStyle.of(context).style] with size 36
   /// font colored white.
   final TextStyle? textStyle;
+  final BoxDecoration? boxDecoration;
+  final TextAlign? textAlignment;
+  final EdgeInsetsGeometry? textPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -1211,18 +1204,29 @@ class ClosedCaption extends StatelessWidget {
               color: Colors.white,
             );
 
+    final BoxDecoration effectiveBoxDecoration = boxDecoration ??
+        BoxDecoration(
+          color: const Color(0xB8000000),
+          borderRadius: BorderRadius.circular(2.0),
+        );
+
+    final TextAlign effectiveAlignment = textAlignment ?? TextAlign.left;
+
+    final EdgeInsetsGeometry effectivePadding = textPadding ?? const EdgeInsets.symmetric(horizontal: 2.0);
+
     return Align(
       alignment: Alignment.bottomCenter,
       child: Padding(
         padding: const EdgeInsets.only(bottom: 24.0),
         child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: const Color(0xB8000000),
-            borderRadius: BorderRadius.circular(2.0),
-          ),
+          decoration: effectiveBoxDecoration,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2.0),
-            child: Text(text, style: effectiveTextStyle),
+            padding: effectivePadding,
+            child: Text(
+              text,
+              style: effectiveTextStyle,
+              textAlign: effectiveAlignment,
+            ),
           ),
         ),
       ),
