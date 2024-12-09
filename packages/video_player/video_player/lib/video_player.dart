@@ -401,7 +401,7 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   }
 
   Future<void> setDubbing(String name) async {
-    return _videoPlayerPlatform.setDubbing(name);
+    return _videoPlayerPlatform.setDubbing(textureId, name);
   }
 
   /// Check if a video is cached or not

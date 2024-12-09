@@ -259,16 +259,17 @@ void SetUpFVPAVFoundationVideoPlayerApiWithSuffix(id<FlutterBinaryMessenger> bin
   {
     FlutterBasicMessageChannel *channel =
       [[FlutterBasicMessageChannel alloc]
-        initWithName:[NSString stringWithFormat:@"%@%@", @"dev.flutter.pigeon.video_player_avfoundation.AVFoundationVideoPlayerApi.setDubbing", messageChannelSuffix]
+        initWithName:[NSString stringWithFormat:@"%@%@", @"dev.flutter.pigeon.video_player_avfoundation.AVFoundationVideoPlayerApi.setDub", messageChannelSuffix]
         binaryMessenger:binaryMessenger
         codec:FVPGetMessagesCodec()];
     if (api) {
-      NSCAssert([api respondsToSelector:@selector(setDubbing:error:)], @"FVPAVFoundationVideoPlayerApi api (%@) doesn't respond to @selector(setDubbing:error:)", api);
+      NSCAssert([api respondsToSelector:@selector(setDubbing:forPlayer:error:)], @"FVPAVFoundationVideoPlayerApi api (%@) doesn't respond to @selector(setDubbing:forPlayer:error:)", api);
       [channel setMessageHandler:^(id _Nullable message, FlutterReply callback) {
         NSArray<id> *args = message;
         NSString *arg_name = GetNullableObjectAtIndex(args, 0);
+        NSInteger arg_textureId = [GetNullableObjectAtIndex(args, 1) integerValue];
         FlutterError *error;
-        [api setDubbing:arg_name error:&error];
+        [api setDubbing:arg_name forPlayer:arg_textureId error:&error];
         callback(wrapResult(nil, error));
       }];
     } else {

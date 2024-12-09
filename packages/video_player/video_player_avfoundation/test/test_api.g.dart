@@ -59,7 +59,7 @@ abstract class TestHostVideoPlayerApi {
 
   void initCache(int maxCacheSize);
 
-  void setDubbing(String name);
+  void setDub(String name, int textureId);
 
   void dispose(int textureId);
 
@@ -208,20 +208,23 @@ abstract class TestHostVideoPlayerApi {
     }
     {
       final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
-          'dev.flutter.pigeon.video_player_avfoundation.AVFoundationVideoPlayerApi.setDubbing$messageChannelSuffix', pigeonChannelCodec,
+          'dev.flutter.pigeon.video_player_avfoundation.AVFoundationVideoPlayerApi.setDub$messageChannelSuffix', pigeonChannelCodec,
           binaryMessenger: binaryMessenger);
       if (api == null) {
         _testBinaryMessengerBinding!.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(pigeonVar_channel, null);
       } else {
         _testBinaryMessengerBinding!.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(pigeonVar_channel, (Object? message) async {
           assert(message != null,
-          'Argument for dev.flutter.pigeon.video_player_avfoundation.AVFoundationVideoPlayerApi.setDubbing was null.');
+          'Argument for dev.flutter.pigeon.video_player_avfoundation.AVFoundationVideoPlayerApi.setDub was null.');
           final List<Object?> args = (message as List<Object?>?)!;
           final String? arg_name = (args[0] as String?);
           assert(arg_name != null,
-              'Argument for dev.flutter.pigeon.video_player_avfoundation.AVFoundationVideoPlayerApi.setDubbing was null, expected non-null String.');
+              'Argument for dev.flutter.pigeon.video_player_avfoundation.AVFoundationVideoPlayerApi.setDub was null, expected non-null String.');
+          final int? arg_textureId = (args[1] as int?);
+          assert(arg_textureId != null,
+              'Argument for dev.flutter.pigeon.video_player_avfoundation.AVFoundationVideoPlayerApi.setDub was null, expected non-null int.');
           try {
-            api.setDubbing(arg_name!);
+            api.setDub(arg_name!, arg_textureId!);
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);

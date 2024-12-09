@@ -89,9 +89,8 @@ class AVFoundationVideoPlayer extends VideoPlayerPlatform {
   }
 
   @override
-  Future<void> setDubbing(String name) {
-    // TODO: implement setDubbing
-    return _api.setDubbing(name);
+  Future<void> setDubbing(int textureId, String name) {
+    return _api.setDub(name, textureId);
   }
 
   @override

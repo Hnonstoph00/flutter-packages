@@ -32,8 +32,7 @@ class AndroidVideoPlayer extends VideoPlayerPlatform {
 
   @override
   Future<bool?> preCache(DataSource dataSource,
-      {HlsCacheConfig? hlsCacheConfig,
-      BufferingConfig? bufferingConfig}) async {
+      {HlsCacheConfig? hlsCacheConfig, BufferingConfig? bufferingConfig}) async {
     String? uri;
     Map<String, String> httpHeaders = <String, String>{};
     uri = dataSource.uri;
@@ -42,8 +41,7 @@ class AndroidVideoPlayer extends VideoPlayerPlatform {
       uri: uri,
       httpHeaders: httpHeaders,
       hlsCacheConfig: hlsCacheConfig?.toMap() ?? const HlsCacheConfig().toMap(),
-      bufferingConfig:
-          bufferingConfig?.toMap() ?? const BufferingConfig().toMap(),
+      bufferingConfig: bufferingConfig?.toMap() ?? const BufferingConfig().toMap(),
     );
 
     final PreCacheMessage response = await _api.preCache(message);
@@ -52,8 +50,7 @@ class AndroidVideoPlayer extends VideoPlayerPlatform {
 
   @override
   Future<bool> isCached(String cacheKey, int position, int length) async {
-    return _api.isCached(
-        IsCacheMessage(cacheKey: cacheKey, position: position, length: length));
+    return _api.isCached(IsCacheMessage(cacheKey: cacheKey, position: position, length: length));
   }
 
   @override
@@ -62,9 +59,17 @@ class AndroidVideoPlayer extends VideoPlayerPlatform {
   }
 
   @override
-  Future<int?> create(DataSource dataSource,
-      {HlsCacheConfig? hlsCacheConfig,
-      BufferingConfig? bufferingConfig}) async {
+  Future<void> setDubbing(int textureId, String name) {
+    return _api.setDub(
+      DubMessage(
+        textureId: textureId,
+        name: name,
+      ),
+    );
+  }
+
+  @override
+  Future<int?> create(DataSource dataSource, {HlsCacheConfig? hlsCacheConfig, BufferingConfig? bufferingConfig}) async {
     String? asset;
     String? packageName;
     String? uri;
@@ -91,8 +96,7 @@ class AndroidVideoPlayer extends VideoPlayerPlatform {
       httpHeaders: httpHeaders,
       formatHint: formatHint,
       hlsCacheConfig: hlsCacheConfig?.toMap() ?? const HlsCacheConfig().toMap(),
-      bufferingConfig:
-          bufferingConfig?.toMap() ?? const BufferingConfig().toMap(),
+      bufferingConfig: bufferingConfig?.toMap() ?? const BufferingConfig().toMap(),
     );
 
     final TextureMessage response = await _api.create(message);
@@ -145,24 +149,20 @@ class AndroidVideoPlayer extends VideoPlayerPlatform {
 
   @override
   Future<Duration> getPosition(int textureId) async {
-    final PositionMessage response =
-        await _api.position(TextureMessage(textureId: textureId));
+    final PositionMessage response = await _api.position(TextureMessage(textureId: textureId));
     return Duration(milliseconds: response.position);
   }
 
   @override
   Stream<VideoEvent> videoEventsFor(int textureId) {
-    return _eventChannelFor(textureId)
-        .receiveBroadcastStream()
-        .map((dynamic event) {
+    return _eventChannelFor(textureId).receiveBroadcastStream().map((dynamic event) {
       final Map<dynamic, dynamic> map = event as Map<dynamic, dynamic>;
       switch (map['event']) {
         case 'initialized':
           return VideoEvent(
             eventType: VideoEventType.initialized,
             duration: Duration(milliseconds: map['duration'] as int),
-            size: Size((map['width'] as num?)?.toDouble() ?? 0.0,
-                (map['height'] as num?)?.toDouble() ?? 0.0),
+            size: Size((map['width'] as num?)?.toDouble() ?? 0.0, (map['height'] as num?)?.toDouble() ?? 0.0),
             rotationCorrection: map['rotationCorrection'] as int? ?? 0,
           );
         case 'completed':
@@ -198,16 +198,14 @@ class AndroidVideoPlayer extends VideoPlayerPlatform {
 
   @override
   Future<void> setMixWithOthers(bool mixWithOthers) {
-    return _api
-        .setMixWithOthers(MixWithOthersMessage(mixWithOthers: mixWithOthers));
+    return _api.setMixWithOthers(MixWithOthersMessage(mixWithOthers: mixWithOthers));
   }
 
   EventChannel _eventChannelFor(int textureId) {
     return EventChannel('flutter.io/videoPlayer/videoEvents$textureId');
   }
 
-  static const Map<VideoFormat, String> _videoFormatStringMap =
-      <VideoFormat, String>{
+  static const Map<VideoFormat, String> _videoFormatStringMap = <VideoFormat, String>{
     VideoFormat.ss: 'ss',
     VideoFormat.hls: 'hls',
     VideoFormat.dash: 'dash',
