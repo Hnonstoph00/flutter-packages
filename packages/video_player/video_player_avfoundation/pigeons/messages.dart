@@ -44,8 +44,8 @@ abstract class AVFoundationVideoPlayerApi {
   int isCached(String cacheKey, int position, int length);
   @ObjCSelector('initCache:')
   void initCache(int maxCacheSize);
-  @ObjCSelector('setDubbing:')
-  void setDubbing(String name);
+  @ObjCSelector('setDubbing:forPlayer:')
+  void setDub(String name, int textureId);
   @ObjCSelector('disposePlayer:')
   void dispose(int textureId);
   @ObjCSelector('setLooping:forPlayer:')

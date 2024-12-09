@@ -59,7 +59,7 @@ abstract class VideoPlayerPlatform extends PlatformInterface {
   }
 
   /// set Dub
-  Future<void> setDubbing(String name) {
+  Future<void> setDubbing(int textureId, String name) {
     throw UnimplementedError('setDubbing() has not been implemented.');
   }
 

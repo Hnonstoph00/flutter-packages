@@ -36,6 +36,12 @@ class LoopingMessage {
   bool isLooping;
 }
 
+class DubMessage {
+  DubMessage(this.textureId, this.name);
+  int textureId;
+  String name;
+}
+
 class VolumeMessage {
   VolumeMessage(this.textureId, this.volume);
   int textureId;
@@ -55,10 +61,7 @@ class PositionMessage {
 }
 
 class CreateMessage {
-  CreateMessage(
-      {required this.httpHeaders,
-      required this.hlsCacheConfig,
-      required this.bufferingConfig});
+  CreateMessage({required this.httpHeaders, required this.hlsCacheConfig, required this.bufferingConfig});
   String? asset;
   String? uri;
   String? packageName;
@@ -89,4 +92,5 @@ abstract class AndroidVideoPlayerApi {
   void seekTo(PositionMessage msg);
   void pause(TextureMessage msg);
   void setMixWithOthers(MixWithOthersMessage msg);
+  void setDub(DubMessage msg);
 }

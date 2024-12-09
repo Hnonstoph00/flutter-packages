@@ -22,6 +22,10 @@ import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackParameters;
 import androidx.media3.common.Player;
+import androidx.media3.common.TrackGroup;
+import androidx.media3.common.TrackSelectionOverride;
+import androidx.media3.common.TrackSelectionParameters;
+import androidx.media3.common.Tracks;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.datasource.cache.Cache;
 import androidx.media3.datasource.cache.CacheDataSource;
@@ -29,6 +33,11 @@ import androidx.media3.exoplayer.DefaultLoadControl;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.hls.HlsMediaSource;
 import androidx.media3.exoplayer.source.MediaSource;
+
+import com.google.common.collect.ImmutableList;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import io.flutter.view.TextureRegistry;
 
@@ -55,37 +64,37 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
   @OptIn(markerClass = UnstableApi.class)
   @NonNull
   static VideoPlayer create(
-      @NonNull Context context,
-      @NonNull VideoPlayerCallbacks events,
-      @NonNull TextureRegistry.SurfaceProducer surfaceProducer,
-      @NonNull VideoAsset asset,
-      @NonNull VideoPlayerOptions options) {
+          @NonNull Context context,
+          @NonNull VideoPlayerCallbacks events,
+          @NonNull TextureRegistry.SurfaceProducer surfaceProducer,
+          @NonNull VideoAsset asset,
+          @NonNull VideoPlayerOptions options) {
     return new VideoPlayer(context,
-        () -> {
-          ExoPlayer.Builder builder;
-          if (options.useCache) {
+            () -> {
+              ExoPlayer.Builder builder;
+              if (options.useCache) {
 
-              builder = new ExoPlayer.Builder(context);
+                builder = new ExoPlayer.Builder(context);
 
-          } else {
-              builder = new ExoPlayer.Builder(context).setMediaSourceFactory(asset.getMediaSourceFactory(context));
-          }
-          DefaultLoadControl.Builder loadBuilder = new DefaultLoadControl.Builder();
-          loadBuilder.setBufferDurationsMs(
-                  options.minBufferMs,
-                  options.maxBufferMs,
-                  options.bufferForPlaybackMs,
-                  options.bufferForPlaybackAfterRebufferMs
-          );
-          DefaultLoadControl loadControl = loadBuilder.build();
-          builder.setLoadControl(loadControl);
+              } else {
+                builder = new ExoPlayer.Builder(context).setMediaSourceFactory(asset.getMediaSourceFactory(context));
+              }
+              DefaultLoadControl.Builder loadBuilder = new DefaultLoadControl.Builder();
+              loadBuilder.setBufferDurationsMs(
+                      options.minBufferMs,
+                      options.maxBufferMs,
+                      options.bufferForPlaybackMs,
+                      options.bufferForPlaybackAfterRebufferMs
+              );
+              DefaultLoadControl loadControl = loadBuilder.build();
+              builder.setLoadControl(loadControl);
 
-          return builder.build();
-        },
-        events,
-        surfaceProducer,
-        asset.getMediaItem(),
-        options);
+              return builder.build();
+            },
+            events,
+            surfaceProducer,
+            asset.getMediaItem(),
+            options);
   }
   /**
    * Precache a video player.
@@ -99,13 +108,13 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
           Context context,
           VideoAsset asset,
           VideoPlayerOptions options, Uri uri) {
-      if (options.useCache) {
-        PreloadHelper preloadHelper = new PreloadHelper(context,uri);
-        preloadHelper.preCacheVideoBlocking();
+    if (options.useCache) {
+      PreloadHelper preloadHelper = new PreloadHelper(context,uri);
+      preloadHelper.preCacheVideoBlocking();
 
-        return true;
-      }
-      return false;
+      return true;
+    }
+    return false;
   }
 
   /** A closure-compatible signature since {@link java.util.function.Supplier} is API level 24. */
@@ -121,12 +130,12 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
   @VisibleForTesting
   VideoPlayer(
           @NonNull Context context,
-      @NonNull ExoPlayerProvider exoPlayerProvider,
-      @NonNull VideoPlayerCallbacks events,
-      @NonNull TextureRegistry.SurfaceProducer surfaceProducer,
-      @NonNull MediaItem mediaItem,
-      @NonNull VideoPlayerOptions options
-      ) {
+          @NonNull ExoPlayerProvider exoPlayerProvider,
+          @NonNull VideoPlayerCallbacks events,
+          @NonNull TextureRegistry.SurfaceProducer surfaceProducer,
+          @NonNull MediaItem mediaItem,
+          @NonNull VideoPlayerOptions options
+  ) {
     this.context = context;
     this.exoPlayerProvider = exoPlayerProvider;
     this.videoPlayerEvents = events;
@@ -155,9 +164,10 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
     savedStateDuring = ExoPlayerState.save(exoPlayer);
     exoPlayer.release();
   }
+  private List<String> listLanguage = new ArrayList<>();
 
-    @OptIn(markerClass = UnstableApi.class)
-    private ExoPlayer createVideoPlayer() {
+  @OptIn(markerClass = UnstableApi.class)
+  private ExoPlayer createVideoPlayer() {
     ExoPlayer exoPlayer = exoPlayerProvider.get();
     exoPlayer.setPlayWhenReady(false);
     Cache cache = CacheManager.INSTANCE.getCache(context);
@@ -169,8 +179,25 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
 
 
     exoPlayer.setMediaSource(mediaSource);
+    TrackSelectionParameters trackSelectionParameters = new TrackSelectionParameters.Builder(context)
+            .setPreferredAudioLanguage(null) // Allow all audio languages
+            .setPreferredTextLanguage(null) // Allow all subtitle languages
+            .build();
+    exoPlayer.setTrackSelectionParameters(trackSelectionParameters);
 
     exoPlayer.prepare();
+
+    exoPlayer.addListener(new Player.Listener() {
+      @Override
+      public void onTracksChanged(Tracks tracks) {
+        List<String> audioLanguages = getAvailableAudioLanguages(tracks);
+        if (!audioLanguages.isEmpty()) {
+          listLanguage.clear();
+          listLanguage.addAll(audioLanguages);
+        }
+        Log.d("listLanguage", listLanguage.toString());
+      }
+    });
 
     exoPlayer.setVideoSurface(surfaceProducer.getSurface());
 
@@ -181,14 +208,78 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
     return exoPlayer;
   }
 
+  void switchAudioTrack(String language) {
+    Log.d("LOG + ", "switch audio track + ");
+    Tracks currentTracks = exoPlayer.getCurrentTracks();
+    TrackGroup audioTrackGroup = null;
+
+    for (Tracks.Group group : currentTracks.getGroups()) {
+      if (group.getType() == C.TRACK_TYPE_AUDIO
+              && language.equalsIgnoreCase(group.getMediaTrackGroup().getFormat(0).label)) {
+        audioTrackGroup = group.getMediaTrackGroup();
+        break;
+      }
+    }
+    for (Tracks.Group group : currentTracks.getGroups()) {
+      if (group.getType() == C.TRACK_TYPE_AUDIO) {
+        TrackGroup trackGroup = group.getMediaTrackGroup();
+
+        for (int i = 0; i < trackGroup.length; i++) {
+          String label = trackGroup.getFormat(i).label;
+          String language1 = trackGroup.getFormat(i).language;
+
+          Log.d("LOG +", "Label: " + (label != null ? label : "Unknown")
+                  + ", Language: " + (language1 != null ? language1 : "Unknown"));
+        }
+      }
+    }
+
+    if (audioTrackGroup != null) {
+      TrackSelectionOverride trackSelectionOverride = new TrackSelectionOverride(
+              audioTrackGroup, ImmutableList.of(0) // Select the first track of the group
+      );
+
+      // Apply the new track selection override
+      TrackSelectionParameters updatedParameters = exoPlayer.getTrackSelectionParameters()
+              .buildUpon()
+              .setOverrideForType(trackSelectionOverride)
+              .build();
+
+      exoPlayer.setTrackSelectionParameters(updatedParameters);
+    } else {
+      Log.d("LOG + ", "track not found");
+      // TO DO: Handle the case where the audio track with the specified language is not found
+    }
+  }
+
+
+  private List<String> getAvailableAudioLanguages(Tracks tracks) {
+    List<String> audioLanguages = new ArrayList<>();
+
+    // Filter audio track groups
+    for (Tracks.Group group : tracks.getGroups()) {
+      if (group.getType() == C.TRACK_TYPE_AUDIO) {
+        for (int i = 0; i < group.getMediaTrackGroup().length; i++) {
+          String language = group.getMediaTrackGroup().getFormat(i).language;
+          if (language != null && !audioLanguages.contains(language)) {
+            audioLanguages.add(language);
+          }
+        }
+      }
+    }
+
+    return audioLanguages;
+  }
+
+
   void sendBufferingUpdate() {
     videoPlayerEvents.onBufferingUpdate(exoPlayer.getBufferedPosition());
   }
 
   private static void setAudioAttributes(ExoPlayer exoPlayer, boolean isMixMode) {
     exoPlayer.setAudioAttributes(
-        new AudioAttributes.Builder().setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build(),
-        !isMixMode);
+            new AudioAttributes.Builder().setContentType(C.AUDIO_CONTENT_TYPE_MOVIE).build(),
+            !isMixMode);
   }
 
   void play() {

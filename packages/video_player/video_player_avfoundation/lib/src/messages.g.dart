@@ -266,16 +266,16 @@ class AVFoundationVideoPlayerApi {
     }
   }
 
-  Future<void> setDubbing(String name) async {
-    print("LOG + ddđd");
+  Future<void> setDub(String name, int textureId) async {
     final String pigeonVar_channelName =
-        'dev.flutter.pigeon.video_player_avfoundation.AVFoundationVideoPlayerApi.setDubbing$pigeonVar_messageChannelSuffix';
+        'dev.flutter.pigeon.video_player_avfoundation.AVFoundationVideoPlayerApi.setDub$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,
       binaryMessenger: pigeonVar_binaryMessenger,
     );
-    final List<Object?>? pigeonVar_replyList = await pigeonVar_channel.send(<Object?>[name]) as List<Object?>?;
+    final List<Object?>? pigeonVar_replyList =
+        await pigeonVar_channel.send(<Object?>[name, textureId]) as List<Object?>?;
     if (pigeonVar_replyList == null) {
       throw _createConnectionError(pigeonVar_channelName);
     } else if (pigeonVar_replyList.length > 1) {
@@ -285,7 +285,6 @@ class AVFoundationVideoPlayerApi {
         details: pigeonVar_replyList[2],
       );
     } else {
-      print('LOG + i am here');
       return;
     }
   }
