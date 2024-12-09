@@ -265,6 +265,8 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
     AVURLAsset *urlAsset = [AVURLAsset URLAssetWithURL:url options:options];
     item = [AVPlayerItem playerItemWithAsset:urlAsset];
   }
+//    item = [_cacheManager getCachingPlayerItemForNormalPlayback:url cacheKey:hlsCacheConfig[@"cacheKey"] videoExtension: nil headers:headers];
+
   return [self initWithPlayerItem:item
                      frameUpdater:frameUpdater
                       displayLink:(FVPDisplayLink *)displayLink
@@ -789,7 +791,6 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
                                   position:(NSInteger)position 
                                   length:(NSInteger)length
                           error:(FlutterError **)error {
-    NSLog(cacheKey);
     NSURL * url = [NSURL URLWithString:cacheKey];
     [_cacheManager isVideoCached:url];
     BOOL isCached = [_cacheManager isVideoCached:url];
@@ -813,6 +814,12 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
   if (!player.disposed) {
     [player dispose];
   }
+}
+
+- (void)setDubbing:(NSString *)dubbing error:(FlutterError **)error {
+    NSLog(@"LOG + i am wrong here");
+    [_cacheManager setDubbing:dubbing];
+    return;
 }
 
 - (void)setLooping:(BOOL)isLooping forPlayer:(NSInteger)textureId error:(FlutterError **)error {

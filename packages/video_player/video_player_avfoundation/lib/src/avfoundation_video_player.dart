@@ -31,9 +31,7 @@ class AVFoundationVideoPlayer extends VideoPlayerPlatform {
   }
 
   @override
-  Future<int?> create(DataSource dataSource,
-      {HlsCacheConfig? hlsCacheConfig,
-      BufferingConfig? bufferingConfig}) async {
+  Future<int?> create(DataSource dataSource, {HlsCacheConfig? hlsCacheConfig, BufferingConfig? bufferingConfig}) async {
     String? asset;
     String? packageName;
     String? uri;
@@ -66,8 +64,7 @@ class AVFoundationVideoPlayer extends VideoPlayerPlatform {
 
   @override
   Future<bool?> preCache(DataSource dataSource,
-      {HlsCacheConfig? hlsCacheConfig,
-      BufferingConfig? bufferingConfig}) async {
+      {HlsCacheConfig? hlsCacheConfig, BufferingConfig? bufferingConfig}) async {
     String? uri;
     Map<String, String> httpHeaders = <String, String>{};
     uri = dataSource.uri;
@@ -89,6 +86,12 @@ class AVFoundationVideoPlayer extends VideoPlayerPlatform {
   @override
   Future<void> initCache(int maxCacheSize) async {
     return _api.initCache(maxCacheSize);
+  }
+
+  @override
+  Future<void> setDubbing(String name) {
+    // TODO: implement setDubbing
+    return _api.setDubbing(name);
   }
 
   @override
@@ -131,17 +134,14 @@ class AVFoundationVideoPlayer extends VideoPlayerPlatform {
 
   @override
   Stream<VideoEvent> videoEventsFor(int textureId) {
-    return _eventChannelFor(textureId)
-        .receiveBroadcastStream()
-        .map((dynamic event) {
+    return _eventChannelFor(textureId).receiveBroadcastStream().map((dynamic event) {
       final Map<dynamic, dynamic> map = event as Map<dynamic, dynamic>;
       switch (map['event']) {
         case 'initialized':
           return VideoEvent(
             eventType: VideoEventType.initialized,
             duration: Duration(milliseconds: map['duration'] as int),
-            size: Size((map['width'] as num?)?.toDouble() ?? 0.0,
-                (map['height'] as num?)?.toDouble() ?? 0.0),
+            size: Size((map['width'] as num?)?.toDouble() ?? 0.0, (map['height'] as num?)?.toDouble() ?? 0.0),
           );
         case 'completed':
           return VideoEvent(
@@ -183,8 +183,7 @@ class AVFoundationVideoPlayer extends VideoPlayerPlatform {
     return EventChannel('flutter.io/videoPlayer/videoEvents$textureId');
   }
 
-  static const Map<VideoFormat, String> _videoFormatStringMap =
-      <VideoFormat, String>{
+  static const Map<VideoFormat, String> _videoFormatStringMap = <VideoFormat, String>{
     VideoFormat.ss: 'ss',
     VideoFormat.hls: 'hls',
     VideoFormat.dash: 'dash',

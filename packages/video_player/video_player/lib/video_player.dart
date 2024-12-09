@@ -400,6 +400,10 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
         hlsCacheConfig: videoPlayerOptions?.hlsCacheConfig, bufferingConfig: videoPlayerOptions?.bufferingConfig);
   }
 
+  Future<void> setDubbing(String name) async {
+    return _videoPlayerPlatform.setDubbing(name);
+  }
+
   /// Check if a video is cached or not
   static Future<bool> isCached(String cacheKey, {int position = 0, int length = 100}) async {
     return _videoPlayerPlatform.isCached(cacheKey, position, length);

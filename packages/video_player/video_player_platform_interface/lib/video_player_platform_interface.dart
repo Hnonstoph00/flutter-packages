@@ -49,15 +49,18 @@ abstract class VideoPlayerPlatform extends PlatformInterface {
   }
 
   /// Creates an instance of a video player and returns its textureId.
-  Future<int?> create(DataSource dataSource,
-      {HlsCacheConfig? hlsCacheConfig, BufferingConfig? bufferingConfig}) {
+  Future<int?> create(DataSource dataSource, {HlsCacheConfig? hlsCacheConfig, BufferingConfig? bufferingConfig}) {
     throw UnimplementedError('create() has not been implemented.');
   }
 
   /// Pre-cache video
-  Future<bool?> preCache(DataSource dataSource,
-      {HlsCacheConfig? hlsCacheConfig, BufferingConfig? bufferingConfig}) {
+  Future<bool?> preCache(DataSource dataSource, {HlsCacheConfig? hlsCacheConfig, BufferingConfig? bufferingConfig}) {
     throw UnimplementedError('preCache() has not been implemented.');
+  }
+
+  /// set Dub
+  Future<void> setDubbing(String name) {
+    throw UnimplementedError('setDubbing() has not been implemented.');
   }
 
   /// is video cached
@@ -371,16 +374,12 @@ class DurationRange {
   }
 
   @override
-  String toString() =>
-      '${objectRuntimeType(this, 'DurationRange')}(start: $start, end: $end)';
+  String toString() => '${objectRuntimeType(this, 'DurationRange')}(start: $start, end: $end)';
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is DurationRange &&
-          runtimeType == other.runtimeType &&
-          start == other.start &&
-          end == other.end;
+      other is DurationRange && runtimeType == other.runtimeType && start == other.start && end == other.end;
 
   @override
   int get hashCode => Object.hash(start, end);
@@ -483,8 +482,7 @@ class BufferingConfig {
       'minBufferMs': minBufferMs.toString(),
       'maxBufferMs': maxBufferMs.toString(),
       'bufferForPlaybackMs': bufferForPlaybackMs.toString(),
-      'bufferForPlaybackAfterRebufferMs':
-          bufferForPlaybackAfterRebufferMs.toString(),
+      'bufferForPlaybackAfterRebufferMs': bufferForPlaybackAfterRebufferMs.toString(),
     };
   }
 }

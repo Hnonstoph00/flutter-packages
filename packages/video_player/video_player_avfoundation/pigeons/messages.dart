@@ -9,8 +9,7 @@ import 'package:pigeon/pigeon.dart';
   dartTestOut: 'test/test_api.g.dart',
   objcHeaderOut:
       'darwin/video_player_avfoundation/Sources/video_player_avfoundation/include/video_player_avfoundation/messages.g.h',
-  objcSourceOut:
-      'darwin/video_player_avfoundation/Sources/video_player_avfoundation/messages.g.m',
+  objcSourceOut: 'darwin/video_player_avfoundation/Sources/video_player_avfoundation/messages.g.m',
   objcOptions: ObjcOptions(
     prefix: 'FVP',
     headerIncludePath: './include/video_player_avfoundation/messages.g.h',
@@ -45,6 +44,8 @@ abstract class AVFoundationVideoPlayerApi {
   int isCached(String cacheKey, int position, int length);
   @ObjCSelector('initCache:')
   void initCache(int maxCacheSize);
+  @ObjCSelector('setDubbing:')
+  void setDubbing(String name);
   @ObjCSelector('disposePlayer:')
   void dispose(int textureId);
   @ObjCSelector('setLooping:forPlayer:')
