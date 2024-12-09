@@ -93,6 +93,9 @@
 // (e.g., after a seek while paused). If YES, the display link should continue to run until the next
 // frame is successfully provided.
 @property(nonatomic, assign) BOOL waitingForFrame;
+@property (nonatomic, strong) NSArray<AVMediaSelectionOption *> *audioOptions; // To store audio options
+@property (nonatomic, strong) AVMediaSelectionGroup *audioGroup; // To store audio group options
+
 
 - (instancetype)initWithURL:(NSURL *)url
                frameUpdater:(FVPFrameUpdater *)frameUpdater
@@ -265,7 +268,6 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
     AVURLAsset *urlAsset = [AVURLAsset URLAssetWithURL:url options:options];
     item = [AVPlayerItem playerItemWithAsset:urlAsset];
   }
-//    item = [_cacheManager getCachingPlayerItemForNormalPlayback:url cacheKey:hlsCacheConfig[@"cacheKey"] videoExtension: nil headers:headers];
 
   return [self initWithPlayerItem:item
                      frameUpdater:frameUpdater
@@ -337,7 +339,7 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
   [self addObserversForItem:item player:_player];
 
   [asset loadValuesAsynchronouslyForKeys:@[ @"tracks" ] completionHandler:assetCompletionHandler];
-  
+    [self loadAudioOptions];
   return self;
 }
 
@@ -554,6 +556,57 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
   }
 
   _player.rate = speed;
+}
+
+// Function to load the audio options from the m3u8 file
+- (void)loadAudioOptions {
+    AVPlayerItem *currentPlayerItem = self.player.currentItem;
+
+    if (!currentPlayerItem) {
+        NSLog(@"No current player item is available.");
+        return;
+    }
+
+    AVURLAsset *asset = (AVURLAsset *)currentPlayerItem.asset;
+    
+    [asset loadValuesAsynchronouslyForKeys:@[@"availableMediaCharacteristicsWithMediaSelectionOptions"] completionHandler:^{
+        dispatch_async(dispatch_get_main_queue(), ^{
+            AVMediaSelectionGroup *audioSelectionGroup = [currentPlayerItem.asset mediaSelectionGroupForMediaCharacteristic:AVMediaCharacteristicAudible];
+            if (audioSelectionGroup) {
+                self.audioGroup = audioSelectionGroup;
+                self.audioOptions = audioSelectionGroup.options;
+                
+                NSLog(@"Loaded audio options: %@", self.audioOptions);
+            } else {
+                NSLog(@"No audio tracks found.");
+            }
+        });
+    }];
+}
+
+// Function to select an audio track by its language name
+- (void)setDubbing:(NSString *)language {
+    if (!self.audioGroup) {
+        NSLog(@"Audio group is not loaded.");
+        return;
+    }
+
+    AVMediaSelectionOption *selectedOption = nil;
+
+    // Find the audio option by matching the language
+    for (AVMediaSelectionOption *option in self.audioOptions) {
+        if ([[option.displayName lowercaseString] isEqualToString:[language lowercaseString]]) {
+            selectedOption = option;
+            break;
+        }
+    }
+
+    if (selectedOption) {
+        [self.player.currentItem selectMediaOption:selectedOption inMediaSelectionGroup:self.audioGroup];
+        NSLog(@"Selected audio track: %@", selectedOption.locale);
+    } else {
+        NSLog(@"No audio track matches the given language: %@", language);
+    }
 }
 
 - (CVPixelBufferRef)copyPixelBuffer {
@@ -816,9 +869,10 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
   }
 }
 
-- (void)setDubbing:(NSString *)dubbing error:(FlutterError **)error {
-    NSLog(@"LOG + i am wrong here");
-    [_cacheManager setDubbing:dubbing];
+- (void)setDubbing:(NSString *)dubbing forPlayer:(NSInteger)textureId error:(FlutterError *_Nullable *_Nonnull)error {
+    FVPVideoPlayer *player = self.playersByTextureId[@(textureId)];
+    [player setDubbing:dubbing];
+
     return;
 }
 

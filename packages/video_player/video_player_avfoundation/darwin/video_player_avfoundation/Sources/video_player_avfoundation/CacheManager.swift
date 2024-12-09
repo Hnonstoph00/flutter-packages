@@ -314,41 +314,35 @@ struct CacheItem: Codable {
         return resourceURL.absoluteString
     }
     
-    private var selectedAudioOption: AVMediaSelectionOption?
-    private var currentPlayerItem: AVPlayerItem?
-    
-    private func selectAudioTrack(displayName: String) {
-        guard let playerItem = currentPlayerItem,
-              let group = playerItem.asset.mediaSelectionGroup(forMediaCharacteristic: .audible) else { return }
-        group.options.map { element in
-            print("LOG + supposet lang \(element.displayName)")
-        }
-        
-        if let selectedOption = group.options.first(where: { $0.displayName == displayName }) {
-            currentPlayerItem?.select(selectedOption, in: group)
-        }
-    }
+//    private var currentPlayerItem: AVPlayerItem?
+//    
+//    private func selectAudioTrack(displayName: String) {
+//        guard let playerItem = currentPlayerItem,
+//              let group = playerItem.asset.mediaSelectionGroup(forMediaCharacteristic: .audible) else { return }
+//        
+//        if let selectedOption = group.options.first(where: { $0.displayName == displayName }) {
+//            currentPlayerItem?.select(selectedOption, in: group)
+//        }
+//    }
 }
 
 public extension CacheManager {
     @objc func getCachingPlayerItemForNormalPlayback(_ url: URL, cacheKey: String?, videoExtension: String?, headers: [NSObject: AnyObject]) -> AVPlayerItem? {
         let newUrl = reverseProxyURL(from: url)
-        currentPlayerItem = AVPlayerItem(url: newUrl!)
-        currentPlayerItem?.preferredForwardBufferDuration = 10
-        
-        guard let asset = currentPlayerItem?.asset as? AVURLAsset else {
-            print("LOG + keep access")
-            return currentPlayerItem
-        }
-
-//      Load audioSources available
-        asset.loadValuesAsynchronously(forKeys: ["availableMediaCharacteristicsWithMediaSelectionOptions"]) {
-            print("LOG + keep access 2")
-
-        }
-        print("LOG + keep access 3")
-
-        return currentPlayerItem
+        let playerItem = AVPlayerItem(url: newUrl!)
+//        currentPlayerItem = AVPlayerItem(url: newUrl!)
+//        currentPlayerItem?.preferredForwardBufferDuration = 10
+//        
+//        guard let asset = currentPlayerItem?.asset as? AVURLAsset else {
+//            return currentPlayerItem
+//        }
+//
+////      Load audioSources available
+//        asset.loadValuesAsynchronously(forKeys: ["availableMediaCharacteristicsWithMediaSelectionOptions"]) {
+//            print("LOG + keep access 2")
+//
+//        }
+        return playerItem
     }
     
     @objc func isVideoCached(_ url: URL) -> Bool {
@@ -360,9 +354,8 @@ public extension CacheManager {
             return false // The video is not cached
         }
     }
-    
-    @objc func setDubbing(_ name: String) {
-        print("LOG + set dubbing \(name)")
-        selectAudioTrack(displayName: name)
-    }
+//    
+//    @objc func setDubbing(_ name: String) {
+//        selectAudioTrack(displayName: name)
+//    }
 }
