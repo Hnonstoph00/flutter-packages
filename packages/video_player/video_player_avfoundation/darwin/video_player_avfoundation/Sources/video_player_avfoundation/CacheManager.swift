@@ -23,6 +23,12 @@ struct CacheItem: Codable {
     let mimeType: String
 }
 
+enum VideoQuality {
+    case p480
+    case p720
+    case p1080
+}
+
 @objc public class CacheManager: NSObject {
     //    static let shared = HLSVideoCache()
     
@@ -31,6 +37,7 @@ struct CacheItem: Codable {
     private let cache: Storage<String, CacheItem>
     private let originURLKey = "__hls_origin_url"
     private let port: UInt = 1234
+    private var currentVideoQuality = VideoQuality.p480
     
     var completionHandler: ((_ success: Bool) -> Void)?
     
@@ -149,6 +156,17 @@ struct CacheItem: Codable {
                 task.resume()
                 
             } else {
+                let lastPath = originURL.lastPathComponent
+                if lastPath.contains("480") {
+                    currentVideoQuality = VideoQuality.p480
+                } else if lastPath.contains("720") {
+                    currentVideoQuality = VideoQuality.p720
+                } else if lastPath.contains("1080") {
+                    currentVideoQuality = VideoQuality.p1080
+                } else {
+                    print("⚪️ Unknown quality")
+                }
+                
                 // Return cached segment
                 if let cachedItem = self.cachedDataItem(for: originURL) {
                     return completion(GCDWebServerDataResponse(data: cachedItem.data, contentType: cachedItem.mimeType))
@@ -176,58 +194,92 @@ struct CacheItem: Codable {
     }
     
     @objc public func precache(originURL: URL) {
-        if originURL.pathExtension == "m3u8" {
-            // Return cached m3u8 manifest
-            if let item = cachedDataItem(for: originURL),
-               let playlistData = reverseProxyPlaylist(with: item, forOriginURL: originURL)
-            {
+        guard originURL.pathExtension == "m3u8" else { return }
+
+        let baseURL = originURL.deletingLastPathComponent()
+
+        let qualityPrefix: String
+        switch self.currentVideoQuality {
+        case .p480: qualityPrefix = "480"
+        case .p720: qualityPrefix = "720"
+        case .p1080: qualityPrefix = "1080"
+        }
+
+        let qualityM3U8URL = baseURL.appendingPathComponent("\(qualityPrefix).m3u8")
+        let tsSegmentURL = baseURL.appendingPathComponent("\(qualityPrefix)p_000.ts")
+
+        // Step 1: Cache index.m3u8 if needed
+        func cacheIndexIfNeeded(completion: @escaping () -> Void) {
+            if let _ = cachedDataItem(for: originURL) {
+                print("✅ index.m3u8 already cached")
+                completion()
                 return
             }
-            
-            // Cache m3u8 manifest
-            let task = urlSession.dataTask(with: originURL) { data, response, _ in
+
+            urlSession.dataTask(with: originURL) { data, response, _ in
                 guard let data = data,
                       let response = response,
-                      let mimeType = response.mimeType
-                else {
+                      let mimeType = response.mimeType else {
+                    completion() // Proceed anyway
                     return
                 }
-                
+
                 let item = CacheItem(data: data, url: originURL, mimeType: mimeType)
                 self.saveCacheDataItem(item)
-                
-                if let playlistData = self.reverseProxyPlaylist(with: item, forOriginURL: originURL) {
-                    return
-                } else {
-                    return
-                }
-            }
-            
-            task.resume()
-            
-        } else {
-            // Return cached segment
-            if let cachedItem = cachedDataItem(for: originURL) {
+                print("✅ Cached index.m3u8")
+                completion()
+            }.resume()
+        }
+
+        // Step 2: Cache quality.m3u8 if needed
+        func cacheQualityIfNeeded(completion: @escaping () -> Void) {
+            if let _ = cachedDataItem(for: qualityM3U8URL) {
+                print("✅ \(qualityPrefix).m3u8 already cached")
+                completion()
                 return
             }
-            
-            // Cache segment
-            let task = urlSession.dataTask(with: originURL) { data, response, _ in
+
+            urlSession.dataTask(with: qualityM3U8URL) { data, response, _ in
                 guard let data = data,
                       let response = response,
-                      let contentType = response.mimeType
-                else {
+                      let mimeType = response.mimeType else {
+                    completion()
                     return
                 }
-                
-                let mimeType = originURL.absoluteString.contains(".mp4") ? "video/mp4" : response.mimeType!
-                let item = CacheItem(data: data, url: originURL, mimeType: mimeType)
+
+                let item = CacheItem(data: data, url: qualityM3U8URL, mimeType: mimeType)
                 self.saveCacheDataItem(item)
+                print("✅ Cached \(qualityPrefix).m3u8")
+                completion()
+            }.resume()
+        }
+
+        // Step 3: Cache ts segment if needed
+        func cacheFirstTSIfNeeded() {
+            if let _ = cachedDataItem(for: tsSegmentURL) {
+                print("✅ \(tsSegmentURL.lastPathComponent) already cached")
+                return
             }
-            
-            task.resume()
+
+            urlSession.dataTask(with: tsSegmentURL) { data, response, _ in
+                guard let data = data,
+                      let response = response,
+                      let mimeType = response.mimeType else { return }
+
+                let item = CacheItem(data: data, url: tsSegmentURL, mimeType: mimeType)
+                self.saveCacheDataItem(item)
+                print("✅ Cached \(tsSegmentURL.lastPathComponent)")
+            }.resume()
+        }
+
+        // Start the sequence
+        cacheIndexIfNeeded {
+            cacheQualityIfNeeded {
+                cacheFirstTSIfNeeded()
+            }
         }
     }
+
     
     // MARK: - Manipulating Playlist
     
