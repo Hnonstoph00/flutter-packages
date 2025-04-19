@@ -211,7 +211,7 @@ public class VideoPlayerPlugin implements FlutterPlugin, AndroidVideoPlayerApi {
 
     public void setDub(@NonNull Messages.DubMessage msg) {
         VideoPlayer player = videoPlayers.get(msg.getTextureId());
-        player.switchAudioTrack(msg.getName());
+        // player.switchAudioTrack(msg.getName());
     }
 
     public void setLooping(@NonNull LoopingMessage arg) {

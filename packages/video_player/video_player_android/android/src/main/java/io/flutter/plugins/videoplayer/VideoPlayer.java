@@ -169,11 +169,11 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
 
 
     exoPlayer.setMediaSource(mediaSource);
-    TrackSelectionParameters trackSelectionParameters = new TrackSelectionParameters.Builder(context)
-            .setPreferredAudioLanguage(null) // Allow all audio languages
-            .setPreferredTextLanguage(null) // Allow all subtitle languages
-            .build();
-    exoPlayer.setTrackSelectionParameters(trackSelectionParameters);
+    // TrackSelectionParameters trackSelectionParameters = new TrackSelectionParameters.Builder(context)
+    //         .setPreferredAudioLanguage(null) // Allow all audio languages
+    //         .setPreferredTextLanguage(null) // Allow all subtitle languages
+    //         .build();
+    // exoPlayer.setTrackSelectionParameters(trackSelectionParameters);
 
     exoPlayer.prepare();
 
