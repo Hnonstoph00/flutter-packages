@@ -1013,6 +1013,94 @@ public class Messages {
     }
   }
 
+  /** Generated class from Pigeon that represents data sent in messages. */
+  public static final class SwitchQualityMessage {
+    private @NonNull Long textureId;
+
+    public @NonNull Long getTextureId() {
+      return textureId;
+    }
+
+    public void setTextureId(@NonNull Long setterArg) {
+      if (setterArg == null) {
+        throw new IllegalStateException("Nonnull field \"textureId\" is null.");
+      }
+      this.textureId = setterArg;
+    }
+
+    private @NonNull String url;
+
+    public @NonNull String getUrl() {
+      return url;
+    }
+
+    public void setUrl(@NonNull String setterArg) {
+      if (setterArg == null) {
+        throw new IllegalStateException("Nonnull field \"url\" is null.");
+      }
+      this.url = setterArg;
+    }
+
+    /** Constructor is non-public to enforce null safety; use Builder. */
+    SwitchQualityMessage() {}
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) { return true; }
+      if (o == null || getClass() != o.getClass()) { return false; }
+      SwitchQualityMessage that = (SwitchQualityMessage) o;
+      return textureId.equals(that.textureId) && url.equals(that.url);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(textureId, url);
+    }
+
+    public static final class Builder {
+
+      private @Nullable Long textureId;
+
+      @CanIgnoreReturnValue
+      public @NonNull Builder setTextureId(@NonNull Long setterArg) {
+        this.textureId = setterArg;
+        return this;
+      }
+
+      private @Nullable String url;
+
+      @CanIgnoreReturnValue
+      public @NonNull Builder setUrl(@NonNull String setterArg) {
+        this.url = setterArg;
+        return this;
+      }
+
+      public @NonNull SwitchQualityMessage build() {
+        SwitchQualityMessage pigeonReturn = new SwitchQualityMessage();
+        pigeonReturn.setTextureId(textureId);
+        pigeonReturn.setUrl(url);
+        return pigeonReturn;
+      }
+    }
+
+    @NonNull
+    ArrayList<Object> toList() {
+      ArrayList<Object> toListResult = new ArrayList<>(2);
+      toListResult.add(textureId);
+      toListResult.add(url);
+      return toListResult;
+    }
+
+    static @NonNull SwitchQualityMessage fromList(@NonNull ArrayList<Object> pigeonVar_list) {
+      SwitchQualityMessage pigeonResult = new SwitchQualityMessage();
+      Object textureId = pigeonVar_list.get(0);
+      pigeonResult.setTextureId((Long) textureId);
+      Object url = pigeonVar_list.get(1);
+      pigeonResult.setUrl((String) url);
+      return pigeonResult;
+    }
+  }
+
   private static class PigeonCodec extends StandardMessageCodec {
     public static final PigeonCodec INSTANCE = new PigeonCodec();
 
@@ -1041,6 +1129,8 @@ public class Messages {
           return CreateMessage.fromList((ArrayList<Object>) readValue(buffer));
         case (byte) 138:
           return MixWithOthersMessage.fromList((ArrayList<Object>) readValue(buffer));
+        case (byte) 139:
+          return SwitchQualityMessage.fromList((ArrayList<Object>) readValue(buffer));
         default:
           return super.readValueOfType(type, buffer);
       }
@@ -1078,6 +1168,9 @@ public class Messages {
       } else if (value instanceof MixWithOthersMessage) {
         stream.write(138);
         writeValue(stream, ((MixWithOthersMessage) value).toList());
+      } else if (value instanceof SwitchQualityMessage) {
+        stream.write(139);
+        writeValue(stream, ((SwitchQualityMessage) value).toList());
       } else {
         super.writeValue(stream, value);
       }
@@ -1120,6 +1213,8 @@ public class Messages {
     void setMixWithOthers(@NonNull MixWithOthersMessage msg);
 
     void setDub(@NonNull DubMessage msg);
+
+    void switchQuality(@NonNull SwitchQualityMessage msg);
 
     /** The codec used by AndroidVideoPlayerApi. */
     static @NonNull MessageCodec<Object> getCodec() {
@@ -1463,6 +1558,29 @@ public class Messages {
                 DubMessage msgArg = (DubMessage) args.get(0);
                 try {
                   api.setDub(msgArg);
+                  wrapped.add(0, null);
+                }
+ catch (Throwable exception) {
+                  wrapped = wrapError(exception);
+                }
+                reply.reply(wrapped);
+              });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(
+                binaryMessenger, "dev.flutter.pigeon.video_player_android.AndroidVideoPlayerApi.switchQuality" + messageChannelSuffix, getCodec());
+        if (api != null) {
+          channel.setMessageHandler(
+              (message, reply) -> {
+                ArrayList<Object> wrapped = new ArrayList<>();
+                ArrayList<Object> args = (ArrayList<Object>) message;
+                SwitchQualityMessage msgArg = (SwitchQualityMessage) args.get(0);
+                try {
+                  api.switchQuality(msgArg);
                   wrapped.add(0, null);
                 }
  catch (Throwable exception) {

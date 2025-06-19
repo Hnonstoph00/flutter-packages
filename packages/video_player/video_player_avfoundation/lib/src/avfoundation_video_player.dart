@@ -132,6 +132,16 @@ class AVFoundationVideoPlayer extends VideoPlayerPlatform {
   }
 
   @override
+  Future<void> setQuality(int textureId, double bitrate) {
+    return _api.setQuality(bitrate, textureId);
+  }
+
+  @override
+  Future<void> switchQuality(int textureId, String url) {
+    return _api.switchQuality(url, textureId);
+  }
+
+  @override
   Stream<VideoEvent> videoEventsFor(int textureId) {
     return _eventChannelFor(textureId).receiveBroadcastStream().map((dynamic event) {
       final Map<dynamic, dynamic> map = event as Map<dynamic, dynamic>;

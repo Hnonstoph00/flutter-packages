@@ -532,6 +532,90 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
   _player.volume = (float)((volume < 0.0) ? 0.0 : ((volume > 1.0) ? 1.0 : volume));
 }
 
+- (void)setPreferredPeakBitRate:(double)bitrate {
+    if (_player.currentItem) {
+        _player.currentItem.preferredPeakBitRate = bitrate;
+    }
+}
+
+- (void)switchQuality:(NSString *)url {
+    NSURL * urlB = [NSURL URLWithString:url];
+    
+    // Store current state
+    BOOL wasPlaying = _isPlaying;
+    int64_t currentPosition = [self position];
+    
+    // Remove old observers and video output
+    [self removeKeyValueObservers];
+    [_player.currentItem removeOutput:_videoOutput];
+    
+    // Create new player item using cache manager
+    AVPlayerItem *item = nil;
+    
+    item = [_cacheManager getCachingPlayerItemForNormalPlayback:urlB 
+                                                           cacheKey: url 
+                                                     videoExtension:nil 
+                                                           headers:@{}];
+    
+    // Replace the current item
+    [_player replaceCurrentItemWithPlayerItem:item];
+    
+    // Reset initialization state
+    _isInitialized = NO;
+    
+    // Add observers for the new item
+    [self addObserversForItem:item player:_player];
+    
+    // Re-setup video output for the new item
+    _frameUpdater.videoOutput = _videoOutput;
+    
+    // Load asset tracks and setup video composition (same as in initWithPlayerItem)
+    AVAsset *asset = [item asset];
+    void (^assetCompletionHandler)(void) = ^{
+        if ([asset statusOfValueForKey:@"tracks" error:nil] == AVKeyValueStatusLoaded) {
+            NSArray *tracks = [asset tracksWithMediaType:AVMediaTypeVideo];
+            if ([tracks count] > 0) {
+                AVAssetTrack *videoTrack = tracks[0];
+                void (^trackCompletionHandler)(void) = ^{
+                    if (self->_disposed) return;
+                    if ([videoTrack statusOfValueForKey:@"preferredTransform"
+                                                  error:nil] == AVKeyValueStatusLoaded) {
+                        // Rotate the video by using a videoComposition and the preferredTransform
+                        self->_preferredTransform = FVPGetStandardizedTransformForTrack(videoTrack);
+                        AVMutableVideoComposition *videoComposition =
+                            [self getVideoCompositionWithTransform:self->_preferredTransform
+                                                         withAsset:asset
+                                                    withVideoTrack:videoTrack];
+                        item.videoComposition = videoComposition;
+                    }
+                };
+                [videoTrack loadValuesAsynchronouslyForKeys:@[ @"preferredTransform" ]
+                                          completionHandler:trackCompletionHandler];
+            }
+        }
+    };
+    
+    [asset loadValuesAsynchronouslyForKeys:@[ @"tracks" ] completionHandler:assetCompletionHandler];
+    
+    // Seek to the previous position if it was valid
+    if (currentPosition > 0) {
+        [self seekTo:currentPosition completionHandler:^(BOOL completed) {
+            // Restore play state
+            if (wasPlaying) {
+                [self play];
+            }
+        }];
+    } else {
+        // Just restore play state if no valid position
+        if (wasPlaying) {
+            [self play];
+        }
+    }
+    
+    // Expect a new frame to be drawn
+    [self expectFrame];
+}
+
 - (void)setPlaybackSpeed:(double)speed {
   // See https://developer.apple.com/library/archive/qa/qa1772/_index.html for an explanation of
   // these checks.
@@ -814,6 +898,63 @@ NS_INLINE CGFloat radiansToDegrees(CGFloat radians) {
   if (!player.disposed) {
     [player dispose];
   }
+}
+
+- (void)setQuality:(double)bitrate
+         forPlayer:(NSInteger)textureId
+             error:(FlutterError **)error {
+    NSNumber *playerKey = @(textureId);
+    FVPVideoPlayer *player = self.playersByTextureId[playerKey];
+    
+    if (!player) {
+        if (error) {
+            *error = [FlutterError errorWithCode:@"player_not_found"
+                                         message:@"No player found for textureId"
+                                         details:nil];
+        }
+        return;
+    }
+    NSLog(@"LOG +[VideoPlayer] Setting preferred peak bitrate: %f for textureId: %ld", bitrate, (long)textureId);
+
+    [player setPreferredPeakBitRate:bitrate];
+    if (@available(iOS 11.0, *)) {
+        CGSize resolution = CGSizeZero;
+        
+        if (bitrate <= 800000) {
+            // 480p
+            resolution = CGSizeMake(852, 480);
+        } else if (bitrate <= 2000000) {
+            // 720p
+            resolution = CGSizeMake(1280, 720);
+        } else if (bitrate <= 5000000) {
+            // 1080p
+            resolution = CGSizeMake(1920, 1080);
+        } else {
+            // Higher than 1080p? No cap
+            resolution = CGSizeZero;
+        }
+        
+        NSLog(@"LOG +[VideoPlayer] Setting preferred maximum resolution: %.0fx%.0f", resolution.width, resolution.height);
+        
+        player.player.currentItem.preferredMaximumResolution = resolution;
+    }
+    
+}
+
+- (void)switchQuality:(NSString *)url forPlayer:(NSInteger)textureId error:(FlutterError **)error {
+    NSNumber *playerKey = @(textureId);
+    FVPVideoPlayer *player = self.playersByTextureId[playerKey];
+    
+    if (!player) {
+        if (error) {
+            *error = [FlutterError errorWithCode:@"player_not_found"
+                                         message:@"No player found for textureId"
+                                         details:nil];
+        }
+        return;
+    }
+    
+    [player switchQuality:url];
 }
 
 - (void)setDubbing:(NSString *)dubbing error:(FlutterError **)error {

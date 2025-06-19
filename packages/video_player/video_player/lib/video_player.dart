@@ -400,8 +400,14 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
         hlsCacheConfig: videoPlayerOptions?.hlsCacheConfig, bufferingConfig: videoPlayerOptions?.bufferingConfig);
   }
 
+  /// Set the quality of the video
+  Future<void> setQuality(double bitrate) async {
+    return _videoPlayerPlatform.setQuality(_textureId, bitrate);
+  }
+
+  /// Set the dubbing of the video
   Future<void> setDubbing(String name) async {
-    return _videoPlayerPlatform.setDubbing(textureId, name);
+    return _videoPlayerPlatform.setDubbing(_textureId, name);
   }
 
   /// Check if a video is cached or not
@@ -586,6 +592,10 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
   Future<void> pause() async {
     value = value.copyWith(isPlaying: false);
     await _applyPlayPause();
+  }
+
+  Future<void> switchQuality(String url) async {
+    await _videoPlayerPlatform.switchQuality(_textureId, url);
   }
 
   Future<void> _applyLooping() async {

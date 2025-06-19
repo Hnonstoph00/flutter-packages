@@ -26,6 +26,7 @@ import io.flutter.plugins.videoplayer.Messages.LoopingMessage;
 import io.flutter.plugins.videoplayer.Messages.MixWithOthersMessage;
 import io.flutter.plugins.videoplayer.Messages.PlaybackSpeedMessage;
 import io.flutter.plugins.videoplayer.Messages.PositionMessage;
+import io.flutter.plugins.videoplayer.Messages.SwitchQualityMessage;
 import io.flutter.plugins.videoplayer.Messages.TextureMessage;
 import io.flutter.plugins.videoplayer.Messages.VolumeMessage;
 import io.flutter.view.TextureRegistry;
@@ -232,6 +233,11 @@ public class VideoPlayerPlugin implements FlutterPlugin, AndroidVideoPlayerApi {
     public void play(@NonNull TextureMessage arg) {
         VideoPlayer player = videoPlayers.get(arg.getTextureId());
         player.play();
+    }
+
+    public void switchQuality(@NonNull SwitchQualityMessage arg) {
+        VideoPlayer player = videoPlayers.get(arg.getTextureId());
+        player.switchQuality(arg.getUrl());
     }
 
     public @NonNull PositionMessage position(@NonNull TextureMessage arg) {

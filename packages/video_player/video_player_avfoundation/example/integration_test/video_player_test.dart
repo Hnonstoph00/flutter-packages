@@ -47,8 +47,7 @@ void main() {
       controller = MiniController.asset(_videoAssetKey);
     });
 
-    testWidgets('registers expected implementation',
-        (WidgetTester tester) async {
+    testWidgets('registers expected implementation', (WidgetTester tester) async {
       AVFoundationVideoPlayer.registerWith();
       expect(VideoPlayerPlatform.instance, isA<AVFoundationVideoPlayer>());
     });
@@ -58,8 +57,7 @@ void main() {
 
       expect(controller.value.isInitialized, true);
       expect(await controller.position, Duration.zero);
-      expect(controller.value.duration,
-          const Duration(seconds: 7, milliseconds: 540));
+      expect(controller.value.duration, const Duration(seconds: 7, milliseconds: 540));
     });
 
     testWidgets('can be played', (WidgetTester tester) async {
@@ -107,8 +105,7 @@ void main() {
       // TODO(stuartmorgan): Investigate why this has a slight discrepency, and
       // fix it if possible. Is AVPlayer's pause method internally async?
       const Duration allowableDelta = Duration(milliseconds: 10);
-      expect(
-          await controller.position, lessThan(pausedPosition + allowableDelta));
+      expect(await controller.position, lessThan(pausedPosition + allowableDelta));
     });
   });
 
@@ -126,8 +123,7 @@ void main() {
       controller = MiniController.file(file);
     });
 
-    testWidgets('test video player using static file() method as constructor',
-        (WidgetTester tester) async {
+    testWidgets('test video player using static file() method as constructor', (WidgetTester tester) async {
       await controller.initialize();
 
       await controller.play();
@@ -152,9 +148,7 @@ void main() {
         if (!started.isCompleted && controller.value.isBuffering) {
           started.complete();
         }
-        if (started.isCompleted &&
-            !controller.value.isBuffering &&
-            !ended.isCompleted) {
+        if (started.isCompleted && !controller.value.isBuffering && !ended.isCompleted) {
           ended.complete();
         }
       });
@@ -185,12 +179,10 @@ void main() {
       expect(livestreamController.value.isInitialized, true);
       // Live streams should have either a positive duration or C.TIME_UNSET if the duration is unknown
       // See https://exoplayer.dev/doc/reference/com/google/android/exoplayer2/Player.html#getDuration--
-      expect(livestreamController.value.duration,
-          (Duration duration) => duration != Duration.zero);
+      expect(livestreamController.value.duration, (Duration duration) => duration != Duration.zero);
     });
 
-    testWidgets('rotated m3u8 has correct aspect ratio',
-        (WidgetTester tester) async {
+    testWidgets('rotated m3u8 has correct aspect ratio', (WidgetTester tester) async {
       // Some m3u8 files contain rotation data that may incorrectly invert the aspect ratio.
       // More info [here](https://github.com/flutter/flutter/issues/109116).
       final MiniController livestreamController = MiniController.network(
@@ -199,8 +191,7 @@ void main() {
       await livestreamController.initialize();
 
       expect(livestreamController.value.isInitialized, true);
-      expect(livestreamController.value.size.width,
-          lessThan(livestreamController.value.size.height));
+      expect(livestreamController.value.size.width, lessThan(livestreamController.value.size.height));
     });
   });
 }

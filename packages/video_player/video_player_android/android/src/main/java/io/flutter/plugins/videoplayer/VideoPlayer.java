@@ -19,6 +19,7 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.media3.common.AudioAttributes;
 import androidx.media3.common.C;
+import androidx.media3.common.Format;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackParameters;
 import androidx.media3.common.Player;
@@ -29,6 +30,16 @@ import androidx.media3.exoplayer.DefaultLoadControl;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.hls.HlsMediaSource;
 import androidx.media3.exoplayer.source.MediaSource;
+import androidx.media3.common.TrackSelectionParameters;
+import androidx.media3.common.Tracks;
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector;
+import androidx.media3.exoplayer.trackselection.MappingTrackSelector;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+import androidx.media3.common.TrackSelectionOverride;
+import androidx.media3.common.TrackGroup;
+import java.util.Collections;
+
 
 import io.flutter.view.TextureRegistry;
 
@@ -203,6 +214,83 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
   void pause() {
     exoPlayer.pause();
   }
+
+  void switchQuality(String url) {
+    int desiredHeight = extractQualityFromUrl(url);
+    if (desiredHeight == -1) {
+        Log.w("QualitySwitch", "Could not extract quality from URL: " + url);
+        return;
+    }
+
+    Tracks tracks = exoPlayer.getCurrentTracks();
+
+    
+    int bestMatchIndex = -1;
+    TrackGroup bestTrackGroup = null;
+    int smallestDiff = Integer.MAX_VALUE;
+
+    for (Tracks.Group group : tracks.getGroups()) {
+        if (group.getType() == C.TRACK_TYPE_VIDEO) {
+            for (int i = 0; i < group.length; i++) {
+                Format format = group.getTrackFormat(i);
+                int height = format.width;
+                Log.d("QualitySwitch", "height: " + height);
+                if (height > 0) {
+                    int diff = Math.abs(height - desiredHeight);
+                    if (diff < smallestDiff) {
+                        smallestDiff = diff;
+                        bestMatchIndex = i;
+                        bestTrackGroup = group.getMediaTrackGroup();
+                    }
+                }
+            }
+        }
+    }
+
+    if (bestMatchIndex != -1 && bestTrackGroup != null) {
+        TrackSelectionOverride override = new TrackSelectionOverride(
+            bestTrackGroup,
+            Collections.singletonList(bestMatchIndex)
+        );
+        TrackSelectionParameters.Builder builder = exoPlayer.getTrackSelectionParameters().buildUpon();
+        builder.clearOverridesOfType(C.TRACK_TYPE_VIDEO);
+        builder.addOverride(override);
+        exoPlayer.setTrackSelectionParameters(builder.build());
+
+        Log.d("QualitySwitch", "track selected: " + getCurrentVideoBitrate());
+        
+
+        Log.d("QualitySwitch", "Switched to: " + desiredHeight + "p");
+    } else {
+        Log.w("QualitySwitch", "No matching video quality found for: " + url);
+    }
+}
+
+public int getCurrentVideoBitrate() {
+  Tracks tracks = exoPlayer.getCurrentTracks();
+  for (Tracks.Group group : tracks.getGroups()) {
+      if (group.getType() == C.TRACK_TYPE_VIDEO) {
+          for (int i = 0; i < group.length; i++) {
+              if (group.isTrackSelected(i)) {
+                  Format format = group.getTrackFormat(i);
+                  return format.bitrate; // in bits per second
+              }
+          }
+      }
+  }
+  return -1; // Not found
+}
+
+// Helper method to extract a number like 480 or 720 from a string
+int extractQualityFromUrl(String url) {
+  Pattern pattern = Pattern.compile("(\\d{3,4})(?=\\D*\\.m3u8$)");
+  Matcher matcher = pattern.matcher(url);
+  int last = -1;
+  while (matcher.find()) {
+      last = Integer.parseInt(matcher.group(1));
+  }
+  return last;
+}
 
   void setLooping(boolean value) {
     exoPlayer.setRepeatMode(value ? REPEAT_MODE_ALL : REPEAT_MODE_OFF);

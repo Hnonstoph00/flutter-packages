@@ -76,6 +76,12 @@ class MixWithOthersMessage {
   bool mixWithOthers;
 }
 
+class SwitchQualityMessage {
+  SwitchQualityMessage(this.textureId, this.url);
+  int textureId;
+  String url;
+}
+
 @HostApi(dartHostTestHandler: 'TestHostVideoPlayerApi')
 abstract class AndroidVideoPlayerApi {
   void initialize();
@@ -93,4 +99,5 @@ abstract class AndroidVideoPlayerApi {
   void pause(TextureMessage msg);
   void setMixWithOthers(MixWithOthersMessage msg);
   void setDub(DubMessage msg);
+  void switchQuality(SwitchQualityMessage msg);
 }

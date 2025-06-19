@@ -65,4 +65,8 @@ abstract class AVFoundationVideoPlayerApi {
   void pause(int textureId);
   @ObjCSelector('setMixWithOthers:')
   void setMixWithOthers(bool mixWithOthers);
+  @ObjCSelector('setQuality:forPlayer:')
+  void setQuality(double quality, int textureId);
+  @ObjCSelector('switchQuality:forPlayer:')
+  void switchQuality(String url, int textureId);
 }

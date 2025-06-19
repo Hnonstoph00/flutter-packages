@@ -51,6 +51,9 @@ class _PigeonCodec extends StandardMessageCodec {
     }    else if (value is MixWithOthersMessage) {
       buffer.putUint8(138);
       writeValue(buffer, value.encode());
+    }    else if (value is SwitchQualityMessage) {
+      buffer.putUint8(139);
+      writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
     }
@@ -79,6 +82,8 @@ class _PigeonCodec extends StandardMessageCodec {
         return CreateMessage.decode(readValue(buffer)!);
       case 138: 
         return MixWithOthersMessage.decode(readValue(buffer)!);
+      case 139: 
+        return SwitchQualityMessage.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
     }
@@ -118,6 +123,8 @@ abstract class TestHostVideoPlayerApi {
   void setMixWithOthers(MixWithOthersMessage msg);
 
   void setDub(DubMessage msg);
+
+  void switchQuality(SwitchQualityMessage msg);
 
   static void setUp(TestHostVideoPlayerApi? api, {BinaryMessenger? binaryMessenger, String messageChannelSuffix = '',}) {
     messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
@@ -481,6 +488,31 @@ abstract class TestHostVideoPlayerApi {
               'Argument for dev.flutter.pigeon.video_player_android.AndroidVideoPlayerApi.setDub was null, expected non-null DubMessage.');
           try {
             api.setDub(arg_msg!);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          }          catch (e) {
+            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          }
+        });
+      }
+    }
+    {
+      final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+          'dev.flutter.pigeon.video_player_android.AndroidVideoPlayerApi.switchQuality$messageChannelSuffix', pigeonChannelCodec,
+          binaryMessenger: binaryMessenger);
+      if (api == null) {
+        _testBinaryMessengerBinding!.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(pigeonVar_channel, null);
+      } else {
+        _testBinaryMessengerBinding!.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(pigeonVar_channel, (Object? message) async {
+          assert(message != null,
+          'Argument for dev.flutter.pigeon.video_player_android.AndroidVideoPlayerApi.switchQuality was null.');
+          final List<Object?> args = (message as List<Object?>?)!;
+          final SwitchQualityMessage? arg_msg = (args[0] as SwitchQualityMessage?);
+          assert(arg_msg != null,
+              'Argument for dev.flutter.pigeon.video_player_android.AndroidVideoPlayerApi.switchQuality was null, expected non-null SwitchQualityMessage.');
+          try {
+            api.switchQuality(arg_msg!);
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);

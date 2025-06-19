@@ -69,6 +69,11 @@ class AndroidVideoPlayer extends VideoPlayerPlatform {
   }
 
   @override
+  Future<void> switchQuality(int textureId, String url) {
+    return _api.switchQuality(SwitchQualityMessage(textureId: textureId, url: url));
+  }
+
+  @override
   Future<int?> create(DataSource dataSource, {HlsCacheConfig? hlsCacheConfig, BufferingConfig? bufferingConfig}) async {
     String? asset;
     String? packageName;

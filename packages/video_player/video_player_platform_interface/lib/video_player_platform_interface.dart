@@ -127,6 +127,14 @@ abstract class VideoPlayerPlatform extends PlatformInterface {
   Future<void> setWebOptions(int textureId, VideoPlayerWebOptions options) {
     throw UnimplementedError('setWebOptions() has not been implemented.');
   }
+
+  Future<void> setQuality(int textureId, double bitrate) {
+    throw UnimplementedError('setQuality() has not been implemented.');
+  }
+
+  Future<void> switchQuality(int textureId, String url) {
+    throw UnimplementedError('setDubbing() has not been implemented.');
+  }
 }
 
 class _PlaceholderImplementation extends VideoPlayerPlatform {}

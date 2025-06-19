@@ -90,6 +90,33 @@ class _ApiLogger implements TestHostVideoPlayerApi {
     playbackSpeed = speed;
     this.textureId = textureId;
   }
+
+  @override
+  void initCache(int maxCacheSize) {
+    // TODO: implement initCache
+  }
+
+  @override
+  int isCached(String cacheKey, int position, int length) {
+    // TODO: implement isCached
+    throw UnimplementedError();
+  }
+
+  @override
+  int preCache(CreationOptions preCacheMsg) {
+    // TODO: implement preCache
+    throw UnimplementedError();
+  }
+
+  @override
+  void setDub(String name, int textureId) {
+    // TODO: implement setDub
+  }
+
+  @override
+  void setQuality(double quality, int textureId) {
+    // TODO: implement setQuality
+  }
 }
 
 void main() {
@@ -173,8 +200,7 @@ void main() {
       expect(log.creationOptions?.uri, 'someUri');
       expect(log.creationOptions?.packageName, null);
       expect(log.creationOptions?.formatHint, null);
-      expect(log.creationOptions?.httpHeaders,
-          <String, String>{'Authorization': 'Bearer token'});
+      expect(log.creationOptions?.httpHeaders, <String, String>{'Authorization': 'Bearer token'});
       expect(textureId, 3);
     });
 
@@ -247,91 +273,68 @@ void main() {
 
     test('videoEventsFor', () async {
       const String mockChannel = 'flutter.io/videoPlayer/videoEvents123';
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMessageHandler(
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMessageHandler(
         mockChannel,
         (ByteData? message) async {
-          final MethodCall methodCall =
-              const StandardMethodCodec().decodeMethodCall(message);
+          final MethodCall methodCall = const StandardMethodCodec().decodeMethodCall(message);
           if (methodCall.method == 'listen') {
-            await TestDefaultBinaryMessengerBinding
-                .instance.defaultBinaryMessenger
-                .handlePlatformMessage(
-                    mockChannel,
-                    const StandardMethodCodec()
-                        .encodeSuccessEnvelope(<String, dynamic>{
-                      'event': 'initialized',
-                      'duration': 98765,
-                      'width': 1920,
-                      'height': 1080,
-                    }),
-                    (ByteData? data) {});
+            await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.handlePlatformMessage(
+                mockChannel,
+                const StandardMethodCodec().encodeSuccessEnvelope(<String, dynamic>{
+                  'event': 'initialized',
+                  'duration': 98765,
+                  'width': 1920,
+                  'height': 1080,
+                }),
+                (ByteData? data) {});
 
-            await TestDefaultBinaryMessengerBinding
-                .instance.defaultBinaryMessenger
-                .handlePlatformMessage(
-                    mockChannel,
-                    const StandardMethodCodec()
-                        .encodeSuccessEnvelope(<String, dynamic>{
-                      'event': 'completed',
-                    }),
-                    (ByteData? data) {});
+            await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.handlePlatformMessage(
+                mockChannel,
+                const StandardMethodCodec().encodeSuccessEnvelope(<String, dynamic>{
+                  'event': 'completed',
+                }),
+                (ByteData? data) {});
 
-            await TestDefaultBinaryMessengerBinding
-                .instance.defaultBinaryMessenger
-                .handlePlatformMessage(
-                    mockChannel,
-                    const StandardMethodCodec()
-                        .encodeSuccessEnvelope(<String, dynamic>{
-                      'event': 'bufferingUpdate',
-                      'values': <List<dynamic>>[
-                        <int>[0, 1234],
-                        <int>[1235, 4000],
-                      ],
-                    }),
-                    (ByteData? data) {});
+            await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.handlePlatformMessage(
+                mockChannel,
+                const StandardMethodCodec().encodeSuccessEnvelope(<String, dynamic>{
+                  'event': 'bufferingUpdate',
+                  'values': <List<dynamic>>[
+                    <int>[0, 1234],
+                    <int>[1235, 4000],
+                  ],
+                }),
+                (ByteData? data) {});
 
-            await TestDefaultBinaryMessengerBinding
-                .instance.defaultBinaryMessenger
-                .handlePlatformMessage(
-                    mockChannel,
-                    const StandardMethodCodec()
-                        .encodeSuccessEnvelope(<String, dynamic>{
-                      'event': 'bufferingStart',
-                    }),
-                    (ByteData? data) {});
+            await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.handlePlatformMessage(
+                mockChannel,
+                const StandardMethodCodec().encodeSuccessEnvelope(<String, dynamic>{
+                  'event': 'bufferingStart',
+                }),
+                (ByteData? data) {});
 
-            await TestDefaultBinaryMessengerBinding
-                .instance.defaultBinaryMessenger
-                .handlePlatformMessage(
-                    mockChannel,
-                    const StandardMethodCodec()
-                        .encodeSuccessEnvelope(<String, dynamic>{
-                      'event': 'bufferingEnd',
-                    }),
-                    (ByteData? data) {});
+            await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.handlePlatformMessage(
+                mockChannel,
+                const StandardMethodCodec().encodeSuccessEnvelope(<String, dynamic>{
+                  'event': 'bufferingEnd',
+                }),
+                (ByteData? data) {});
 
-            await TestDefaultBinaryMessengerBinding
-                .instance.defaultBinaryMessenger
-                .handlePlatformMessage(
-                    mockChannel,
-                    const StandardMethodCodec()
-                        .encodeSuccessEnvelope(<String, dynamic>{
-                      'event': 'isPlayingStateUpdate',
-                      'isPlaying': true,
-                    }),
-                    (ByteData? data) {});
+            await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.handlePlatformMessage(
+                mockChannel,
+                const StandardMethodCodec().encodeSuccessEnvelope(<String, dynamic>{
+                  'event': 'isPlayingStateUpdate',
+                  'isPlaying': true,
+                }),
+                (ByteData? data) {});
 
-            await TestDefaultBinaryMessengerBinding
-                .instance.defaultBinaryMessenger
-                .handlePlatformMessage(
-                    mockChannel,
-                    const StandardMethodCodec()
-                        .encodeSuccessEnvelope(<String, dynamic>{
-                      'event': 'isPlayingStateUpdate',
-                      'isPlaying': false,
-                    }),
-                    (ByteData? data) {});
+            await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.handlePlatformMessage(
+                mockChannel,
+                const StandardMethodCodec().encodeSuccessEnvelope(<String, dynamic>{
+                  'event': 'isPlayingStateUpdate',
+                  'isPlaying': false,
+                }),
+                (ByteData? data) {});
 
             return const StandardMethodCodec().encodeSuccessEnvelope(null);
           } else if (methodCall.method == 'cancel') {
@@ -350,18 +353,16 @@ void main() {
               size: const Size(1920, 1080),
             ),
             VideoEvent(eventType: VideoEventType.completed),
-            VideoEvent(
-                eventType: VideoEventType.bufferingUpdate,
-                buffered: <DurationRange>[
-                  DurationRange(
-                    Duration.zero,
-                    const Duration(milliseconds: 1234),
-                  ),
-                  DurationRange(
-                    const Duration(milliseconds: 1235),
-                    const Duration(milliseconds: 4000),
-                  ),
-                ]),
+            VideoEvent(eventType: VideoEventType.bufferingUpdate, buffered: <DurationRange>[
+              DurationRange(
+                Duration.zero,
+                const Duration(milliseconds: 1234),
+              ),
+              DurationRange(
+                const Duration(milliseconds: 1235),
+                const Duration(milliseconds: 4000),
+              ),
+            ]),
             VideoEvent(eventType: VideoEventType.bufferingStart),
             VideoEvent(eventType: VideoEventType.bufferingEnd),
             VideoEvent(

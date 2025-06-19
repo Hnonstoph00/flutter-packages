@@ -16,6 +16,7 @@ import CryptoKit
 import Foundation
 import GCDWebServer
 import PINCache
+import AVFoundation
 
 struct CacheItem: Codable {
     let data: Data
@@ -389,16 +390,28 @@ public extension CacheManager {
         currentPlayerItem?.preferredForwardBufferDuration = 10
         
         guard let asset = currentPlayerItem?.asset as? AVURLAsset else {
-            print("LOG + keep access")
+            print("LOG + video player: keep access")
             return currentPlayerItem
         }
-
-//      Load audioSources available
+        
         asset.loadValuesAsynchronously(forKeys: ["availableMediaCharacteristicsWithMediaSelectionOptions"]) {
-            print("LOG + keep access 2")
-
+            if let videoGroup = asset.mediaSelectionGroup(forMediaCharacteristic: .visual) {
+                
+                for option in videoGroup.options {
+                    let displayName = option.displayName
+                    
+                    print("LOG + video player: Quality Option: \(displayName)")
+                }
+                
+                // 🔸 Example: Select first available option (you can match by name or resolution)
+                if let selectedOption = videoGroup.options.first {
+                    self.currentPlayerItem?.select(selectedOption, in: videoGroup)
+                    print("LOG + video player: Selected video quality: \(selectedOption.displayName)")
+                }
+            } else {
+                print("LOG + video player: No visual media selection group found")
+            }
         }
-        print("LOG + keep access 3")
 
         return currentPlayerItem
     }
