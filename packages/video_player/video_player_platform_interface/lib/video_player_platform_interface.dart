@@ -135,6 +135,8 @@ abstract class VideoPlayerPlatform extends PlatformInterface {
   Future<void> switchQuality(int textureId, String url) {
     throw UnimplementedError('setDubbing() has not been implemented.');
   }
+
+  Future<void> switchQualityAndroid(int textureId, String url) {
 }
 
 class _PlaceholderImplementation extends VideoPlayerPlatform {}
