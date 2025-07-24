@@ -1121,6 +1121,8 @@ public class Messages {
 
     void setDub(@NonNull DubMessage msg);
 
+    void restorePlayerSurface(@NonNull TextureMessage msg);
+
     /** The codec used by AndroidVideoPlayerApi. */
     static @NonNull MessageCodec<Object> getCodec() {
       return PigeonCodec.INSTANCE;
@@ -1463,6 +1465,29 @@ public class Messages {
                 DubMessage msgArg = (DubMessage) args.get(0);
                 try {
                   api.setDub(msgArg);
+                  wrapped.add(0, null);
+                }
+ catch (Throwable exception) {
+                  wrapped = wrapError(exception);
+                }
+                reply.reply(wrapped);
+              });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(
+                binaryMessenger, "dev.flutter.pigeon.video_player_android.AndroidVideoPlayerApi.restorePlayerSurface" + messageChannelSuffix, getCodec());
+        if (api != null) {
+          channel.setMessageHandler(
+              (message, reply) -> {
+                ArrayList<Object> wrapped = new ArrayList<>();
+                ArrayList<Object> args = (ArrayList<Object>) message;
+                TextureMessage msgArg = (TextureMessage) args.get(0);
+                try {
+                  api.restorePlayerSurface(msgArg);
                   wrapped.add(0, null);
                 }
  catch (Throwable exception) {

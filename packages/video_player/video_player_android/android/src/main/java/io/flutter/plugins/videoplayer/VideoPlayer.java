@@ -137,10 +137,26 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
     surfaceProducer.setCallback(this);
   }
 
+//  @RestrictTo(RestrictTo.Scope.LIBRARY)
+//  // TODO(matanlurey): https://github.com/flutter/flutter/issues/155131.
+//  @SuppressWarnings({"deprecation", "removal"})
+//  public void onSurfaceCreated() {
+////    if (savedStateDuring != null) {
+////      exoPlayer = createVideoPlayer();
+////      savedStateDuring.restore(exoPlayer);
+////      savedStateDuring = null;
+////    }
+//    Log.d(TAG, "LOG + onSurfaceCreate: ");
+//  }
+
+
   @RestrictTo(RestrictTo.Scope.LIBRARY)
-  // TODO(matanlurey): https://github.com/flutter/flutter/issues/155131.
-  @SuppressWarnings({"deprecation", "removal"})
-  public void onSurfaceCreated() {
+  public void onSurfaceAvailable() {
+    restorePlayer();
+    Log.d(TAG, "LOG + onSurfaceAvailable: ");
+  }
+
+  void restorePlayer() {
     if (savedStateDuring != null) {
       exoPlayer = createVideoPlayer();
       savedStateDuring.restore(exoPlayer);
@@ -154,6 +170,7 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
     // at this point (see https://github.com/flutter/flutter/issues/156451).
     savedStateDuring = ExoPlayerState.save(exoPlayer);
     exoPlayer.release();
+    Log.d(TAG, "LOG + onSurfaceDestroyed: ");
   }
 
     @OptIn(markerClass = UnstableApi.class)
@@ -228,8 +245,10 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
   long getPosition() {
     return exoPlayer.getCurrentPosition();
   }
+  private static final String TAG = "VideoPlayerPlugin";
 
   void dispose() {
+    Log.d(TAG, "dispose child call ");
     exoPlayer.release();
     surfaceProducer.release();
 

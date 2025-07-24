@@ -93,4 +93,5 @@ abstract class AndroidVideoPlayerApi {
   void pause(TextureMessage msg);
   void setMixWithOthers(MixWithOthersMessage msg);
   void setDub(DubMessage msg);
+  void restorePlayerSurface(TextureMessage msg);
 }

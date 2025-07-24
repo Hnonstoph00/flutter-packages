@@ -588,6 +588,14 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     await _applyPlayPause();
   }
 
+  /// Restore surface player
+  Future<void> restorePlayerSurface() async {
+    if (!Platform.isAndroid) {
+      return;
+    }
+    await _videoPlayerPlatform.restorePlayerSurface(textureId);
+  }
+
   Future<void> _applyLooping() async {
     if (_isDisposedOrNotInitialized) {
       return;

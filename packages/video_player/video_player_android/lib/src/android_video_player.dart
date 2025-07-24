@@ -219,4 +219,9 @@ class AndroidVideoPlayer extends VideoPlayerPlatform {
       Duration(milliseconds: pair[1] as int),
     );
   }
+
+  @override
+  Future<void> restorePlayerSurface(int textureId) {
+    return _api.restorePlayerSurface(TextureMessage(textureId: textureId));
+  }
 }

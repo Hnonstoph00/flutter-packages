@@ -127,6 +127,13 @@ abstract class VideoPlayerPlatform extends PlatformInterface {
   Future<void> setWebOptions(int textureId, VideoPlayerWebOptions options) {
     throw UnimplementedError('setWebOptions() has not been implemented.');
   }
+
+  /// when show inter or admob, the call back onSurfaceAvailable does not emit, so player can not restore its state
+  /// That make blank screen
+  /// Use this function to manually restore its state
+  Future<void> restorePlayerSurface(int textureId) {
+    throw UnimplementedError('restorePlayerSurface() has not been implemented.');
+  }
 }
 
 class _PlaceholderImplementation extends VideoPlayerPlatform {}

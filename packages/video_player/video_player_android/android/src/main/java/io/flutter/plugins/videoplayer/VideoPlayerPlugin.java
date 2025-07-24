@@ -7,6 +7,7 @@ package io.flutter.plugins.videoplayer;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
+import android.util.Log;
 import android.util.LongSparseArray;
 
 import androidx.annotation.NonNull;
@@ -14,7 +15,7 @@ import androidx.annotation.OptIn;
 import androidx.media3.common.util.UnstableApi;
 
 import io.flutter.FlutterInjector;
-import io.flutter.Log;
+//import io.flutter.Log;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.EventChannel;
@@ -80,7 +81,7 @@ public class VideoPlayerPlugin implements FlutterPlugin, AndroidVideoPlayerApi {
     @Override
     public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
         if (flutterState == null) {
-            Log.wtf(TAG, "Detached from the engine before registering to it.");
+            Log.d(TAG, "Detached from the engine before registering to it.");
         }
         flutterState.stopListening(binding.getBinaryMessenger());
         flutterState = null;
@@ -100,6 +101,7 @@ public class VideoPlayerPlugin implements FlutterPlugin, AndroidVideoPlayerApi {
         // of VideoPlayer. Once https://github.com/flutter/flutter/issues/19358 is resolved this may
         // be replaced with just asserting that videoPlayers.isEmpty().
         // https://github.com/flutter/flutter/issues/20989 tracks this.
+        Log.d(TAG, "onDestroy video view");
         disposeAllPlayers();
     }
 
@@ -205,6 +207,7 @@ public class VideoPlayerPlugin implements FlutterPlugin, AndroidVideoPlayerApi {
 
     public void dispose(@NonNull TextureMessage arg) {
         VideoPlayer player = videoPlayers.get(arg.getTextureId());
+        Log.d(TAG, "dispose: function call");
         player.dispose();
         videoPlayers.remove(arg.getTextureId());
     }
@@ -258,6 +261,12 @@ public class VideoPlayerPlugin implements FlutterPlugin, AndroidVideoPlayerApi {
     @Override
     public void setMixWithOthers(@NonNull MixWithOthersMessage arg) {
         options.mixWithOthers = arg.getMixWithOthers();
+    }
+
+    @Override
+    public void restorePlayerSurface(@NonNull TextureMessage arg) {
+        VideoPlayer player = videoPlayers.get(arg.getTextureId());
+        player.restorePlayer();
     }
 
     private interface KeyForAssetFn {
