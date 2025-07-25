@@ -40,6 +40,7 @@ import javax.net.ssl.HttpsURLConnection;
 /**
  * Android platform implementation of the VideoPlayerPlugin.
  */
+@UnstableApi
 public class VideoPlayerPlugin implements FlutterPlugin, AndroidVideoPlayerApi {
     private static final String TAG = "VideoPlayerPlugin";
     private final LongSparseArray<VideoPlayer> videoPlayers = new LongSparseArray<>();
@@ -88,6 +89,8 @@ public class VideoPlayerPlugin implements FlutterPlugin, AndroidVideoPlayerApi {
         onDestroy();
     }
 
+
+    @OptIn(markerClass = UnstableApi.class)
     private void disposeAllPlayers() {
         for (int i = 0; i < videoPlayers.size(); i++) {
             videoPlayers.valueAt(i).dispose();
@@ -263,6 +266,7 @@ public class VideoPlayerPlugin implements FlutterPlugin, AndroidVideoPlayerApi {
         options.mixWithOthers = arg.getMixWithOthers();
     }
 
+    @OptIn(markerClass = UnstableApi.class)
     @Override
     public void restorePlayerSurface(@NonNull TextureMessage arg) {
         VideoPlayer player = videoPlayers.get(arg.getTextureId());
@@ -271,6 +275,12 @@ public class VideoPlayerPlugin implements FlutterPlugin, AndroidVideoPlayerApi {
 
     private interface KeyForAssetFn {
         String get(String asset);
+    }
+
+    @Override
+    public void setQuality(@NonNull Messages.QualityMessage msg) {
+        VideoPlayer player = videoPlayers.get(msg.getTextureId());
+        player.setVideoQuality(msg.getQuality());
     }
 
     private interface KeyForAssetAndPackageName {

@@ -19,9 +19,12 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.media3.common.AudioAttributes;
 import androidx.media3.common.C;
+import androidx.media3.common.Format;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackParameters;
 import androidx.media3.common.Player;
+import androidx.media3.common.TrackGroup;
+import androidx.media3.common.TrackSelectionParameters;
 import androidx.media3.common.util.UnstableApi;
 import androidx.media3.datasource.cache.Cache;
 import androidx.media3.datasource.cache.CacheDataSource;
@@ -29,9 +32,13 @@ import androidx.media3.exoplayer.DefaultLoadControl;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.hls.HlsMediaSource;
 import androidx.media3.exoplayer.source.MediaSource;
+import androidx.media3.exoplayer.source.TrackGroupArray;
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector;
+import androidx.media3.exoplayer.trackselection.MappingTrackSelector;
 
 import io.flutter.view.TextureRegistry;
 
+@UnstableApi
 final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
   @NonNull private final Context context;
   @NonNull private final ExoPlayerProvider exoPlayerProvider;
@@ -41,6 +48,8 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
   @NonNull private final VideoPlayerOptions options;
   @NonNull private ExoPlayer exoPlayer;
   @Nullable private ExoPlayerState savedStateDuring;
+  @Nullable private DefaultTrackSelector trackSelector;
+
 
   /**
    * Creates a video player.
@@ -179,6 +188,7 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
     exoPlayer.setPlayWhenReady(false);
     Cache cache = CacheManager.INSTANCE.getCache(context);
 
+
     CacheDataSource.Factory dataSourceFactory = CacheDataSourceFactoryManager.Companion.getInstance(context, cache);
     MediaSource mediaSource = new HlsMediaSource.Factory(dataSourceFactory)
             .setAllowChunklessPreparation(true)
@@ -186,12 +196,9 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
 
 
     exoPlayer.setMediaSource(mediaSource);
-    // TrackSelectionParameters trackSelectionParameters = new TrackSelectionParameters.Builder(context)
-    //         .setPreferredAudioLanguage(null) // Allow all audio languages
-    //         .setPreferredTextLanguage(null) // Allow all subtitle languages
-    //         .build();
-    // exoPlayer.setTrackSelectionParameters(trackSelectionParameters);
 
+    trackSelector = new DefaultTrackSelector(context);
+    exoPlayer.setTrackSelectionParameters(trackSelector.getParameters());
     exoPlayer.prepare();
 
     exoPlayer.setVideoSurface(surfaceProducer.getSurface());
@@ -225,6 +232,44 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
     exoPlayer.setRepeatMode(value ? REPEAT_MODE_ALL : REPEAT_MODE_OFF);
   }
 
+    @OptIn(markerClass = UnstableApi.class)
+    void setVideoQuality(long height) {
+        assert trackSelector != null;
+        MappingTrackSelector.MappedTrackInfo mappedTrackInfo =
+            trackSelector.getCurrentMappedTrackInfo();
+      Log.d(TAG, "mappedTrackInfo: null");
+
+      if (mappedTrackInfo == null) return;
+      Log.d(TAG, "mappedTrackInfo: not null");
+    for (int rendererIndex = 0; rendererIndex < mappedTrackInfo.getRendererCount(); rendererIndex++) {
+      TrackGroupArray trackGroups = mappedTrackInfo.getTrackGroups(rendererIndex);
+      if (trackGroups.length == 0) continue;
+
+      @C.TrackType int trackType = mappedTrackInfo.getRendererType(rendererIndex);
+      if (trackType == C.TRACK_TYPE_VIDEO) {
+        for (int groupIndex = 0; groupIndex < trackGroups.length; groupIndex++) {
+          TrackGroup group = trackGroups.get(groupIndex);
+          for (int trackIndex = 0; trackIndex < group.length; trackIndex++) {
+            Format format = group.getFormat(trackIndex);
+            if (format.height == height) {
+              DefaultTrackSelector.Parameters parameters = trackSelector.buildUponParameters()
+                      .setRendererDisabled(rendererIndex, false)
+                      .setSelectionOverride(
+                              rendererIndex,
+                              trackGroups,
+                              new DefaultTrackSelector.SelectionOverride(groupIndex, trackIndex)
+                      )
+                      .build();
+              trackSelector.setParameters(parameters);
+              Log.d(TAG, "setVideoQuality: now");
+              return;
+            }
+          }
+        }
+      }
+    }
+  }
+
   void setVolume(double value) {
     float bracketedValue = (float) Math.max(0.0, Math.min(1.0, value));
     exoPlayer.setVolume(bracketedValue);
@@ -256,4 +301,6 @@ final class VideoPlayer implements TextureRegistry.SurfaceProducer.Callback {
     // https://github.com/flutter/flutter/issues/156434.
     surfaceProducer.setCallback(null);
   }
+
+
 }

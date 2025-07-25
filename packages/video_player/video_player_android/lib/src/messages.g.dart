@@ -282,6 +282,32 @@ class CreateMessage {
   }
 }
 
+class QualityMessage {
+  QualityMessage({
+    required this.textureId,
+    required this.quality,
+  });
+
+  int textureId;
+
+  int quality;
+
+  Object encode() {
+    return <Object?>[
+      textureId,
+      quality,
+    ];
+  }
+
+  static QualityMessage decode(Object result) {
+    result as List<Object?>;
+    return QualityMessage(
+      textureId: result[0]! as int,
+      quality: result[1]! as int,
+    );
+  }
+}
+
 class MixWithOthersMessage {
   MixWithOthersMessage({
     required this.mixWithOthers,
@@ -338,8 +364,11 @@ class _PigeonCodec extends StandardMessageCodec {
     }    else if (value is CreateMessage) {
       buffer.putUint8(137);
       writeValue(buffer, value.encode());
-    }    else if (value is MixWithOthersMessage) {
+    }    else if (value is QualityMessage) {
       buffer.putUint8(138);
+      writeValue(buffer, value.encode());
+    }    else if (value is MixWithOthersMessage) {
+      buffer.putUint8(139);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -368,6 +397,8 @@ class _PigeonCodec extends StandardMessageCodec {
       case 137: 
         return CreateMessage.decode(readValue(buffer)!);
       case 138: 
+        return QualityMessage.decode(readValue(buffer)!);
+      case 139: 
         return MixWithOthersMessage.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
@@ -740,6 +771,28 @@ class AndroidVideoPlayerApi {
 
   Future<void> restorePlayerSurface(TextureMessage msg) async {
     final String pigeonVar_channelName = 'dev.flutter.pigeon.video_player_android.AndroidVideoPlayerApi.restorePlayerSurface$pigeonVar_messageChannelSuffix';
+    final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+      pigeonVar_channelName,
+      pigeonChannelCodec,
+      binaryMessenger: pigeonVar_binaryMessenger,
+    );
+    final List<Object?>? pigeonVar_replyList =
+        await pigeonVar_channel.send(<Object?>[msg]) as List<Object?>?;
+    if (pigeonVar_replyList == null) {
+      throw _createConnectionError(pigeonVar_channelName);
+    } else if (pigeonVar_replyList.length > 1) {
+      throw PlatformException(
+        code: pigeonVar_replyList[0]! as String,
+        message: pigeonVar_replyList[1] as String?,
+        details: pigeonVar_replyList[2],
+      );
+    } else {
+      return;
+    }
+  }
+
+  Future<void> setQuality(QualityMessage msg) async {
+    final String pigeonVar_channelName = 'dev.flutter.pigeon.video_player_android.AndroidVideoPlayerApi.setQuality$pigeonVar_messageChannelSuffix';
     final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
       pigeonVar_channelName,
       pigeonChannelCodec,

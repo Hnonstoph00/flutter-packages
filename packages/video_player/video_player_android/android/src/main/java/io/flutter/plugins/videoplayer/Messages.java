@@ -951,6 +951,94 @@ public class Messages {
   }
 
   /** Generated class from Pigeon that represents data sent in messages. */
+  public static final class QualityMessage {
+    private @NonNull Long textureId;
+
+    public @NonNull Long getTextureId() {
+      return textureId;
+    }
+
+    public void setTextureId(@NonNull Long setterArg) {
+      if (setterArg == null) {
+        throw new IllegalStateException("Nonnull field \"textureId\" is null.");
+      }
+      this.textureId = setterArg;
+    }
+
+    private @NonNull Long quality;
+
+    public @NonNull Long getQuality() {
+      return quality;
+    }
+
+    public void setQuality(@NonNull Long setterArg) {
+      if (setterArg == null) {
+        throw new IllegalStateException("Nonnull field \"quality\" is null.");
+      }
+      this.quality = setterArg;
+    }
+
+    /** Constructor is non-public to enforce null safety; use Builder. */
+    QualityMessage() {}
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) { return true; }
+      if (o == null || getClass() != o.getClass()) { return false; }
+      QualityMessage that = (QualityMessage) o;
+      return textureId.equals(that.textureId) && quality.equals(that.quality);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(textureId, quality);
+    }
+
+    public static final class Builder {
+
+      private @Nullable Long textureId;
+
+      @CanIgnoreReturnValue
+      public @NonNull Builder setTextureId(@NonNull Long setterArg) {
+        this.textureId = setterArg;
+        return this;
+      }
+
+      private @Nullable Long quality;
+
+      @CanIgnoreReturnValue
+      public @NonNull Builder setQuality(@NonNull Long setterArg) {
+        this.quality = setterArg;
+        return this;
+      }
+
+      public @NonNull QualityMessage build() {
+        QualityMessage pigeonReturn = new QualityMessage();
+        pigeonReturn.setTextureId(textureId);
+        pigeonReturn.setQuality(quality);
+        return pigeonReturn;
+      }
+    }
+
+    @NonNull
+    ArrayList<Object> toList() {
+      ArrayList<Object> toListResult = new ArrayList<>(2);
+      toListResult.add(textureId);
+      toListResult.add(quality);
+      return toListResult;
+    }
+
+    static @NonNull QualityMessage fromList(@NonNull ArrayList<Object> pigeonVar_list) {
+      QualityMessage pigeonResult = new QualityMessage();
+      Object textureId = pigeonVar_list.get(0);
+      pigeonResult.setTextureId((Long) textureId);
+      Object quality = pigeonVar_list.get(1);
+      pigeonResult.setQuality((Long) quality);
+      return pigeonResult;
+    }
+  }
+
+  /** Generated class from Pigeon that represents data sent in messages. */
   public static final class MixWithOthersMessage {
     private @NonNull Boolean mixWithOthers;
 
@@ -1040,6 +1128,8 @@ public class Messages {
         case (byte) 137:
           return CreateMessage.fromList((ArrayList<Object>) readValue(buffer));
         case (byte) 138:
+          return QualityMessage.fromList((ArrayList<Object>) readValue(buffer));
+        case (byte) 139:
           return MixWithOthersMessage.fromList((ArrayList<Object>) readValue(buffer));
         default:
           return super.readValueOfType(type, buffer);
@@ -1075,8 +1165,11 @@ public class Messages {
       } else if (value instanceof CreateMessage) {
         stream.write(137);
         writeValue(stream, ((CreateMessage) value).toList());
-      } else if (value instanceof MixWithOthersMessage) {
+      } else if (value instanceof QualityMessage) {
         stream.write(138);
+        writeValue(stream, ((QualityMessage) value).toList());
+      } else if (value instanceof MixWithOthersMessage) {
+        stream.write(139);
         writeValue(stream, ((MixWithOthersMessage) value).toList());
       } else {
         super.writeValue(stream, value);
@@ -1122,6 +1215,8 @@ public class Messages {
     void setDub(@NonNull DubMessage msg);
 
     void restorePlayerSurface(@NonNull TextureMessage msg);
+
+    void setQuality(@NonNull QualityMessage msg);
 
     /** The codec used by AndroidVideoPlayerApi. */
     static @NonNull MessageCodec<Object> getCodec() {
@@ -1488,6 +1583,29 @@ public class Messages {
                 TextureMessage msgArg = (TextureMessage) args.get(0);
                 try {
                   api.restorePlayerSurface(msgArg);
+                  wrapped.add(0, null);
+                }
+ catch (Throwable exception) {
+                  wrapped = wrapError(exception);
+                }
+                reply.reply(wrapped);
+              });
+        } else {
+          channel.setMessageHandler(null);
+        }
+      }
+      {
+        BasicMessageChannel<Object> channel =
+            new BasicMessageChannel<>(
+                binaryMessenger, "dev.flutter.pigeon.video_player_android.AndroidVideoPlayerApi.setQuality" + messageChannelSuffix, getCodec());
+        if (api != null) {
+          channel.setMessageHandler(
+              (message, reply) -> {
+                ArrayList<Object> wrapped = new ArrayList<>();
+                ArrayList<Object> args = (ArrayList<Object>) message;
+                QualityMessage msgArg = (QualityMessage) args.get(0);
+                try {
+                  api.setQuality(msgArg);
                   wrapped.add(0, null);
                 }
  catch (Throwable exception) {

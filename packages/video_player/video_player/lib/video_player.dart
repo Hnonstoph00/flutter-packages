@@ -596,6 +596,14 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
     await _videoPlayerPlatform.restorePlayerSurface(textureId);
   }
 
+  /// setQualityVideo
+  Future<void> setVideoQuality({required int quality}) async {
+    if (!Platform.isAndroid) {
+      return;
+    }
+    await _videoPlayerPlatform.setVideoQuality(textureId, quality);
+  }
+
   Future<void> _applyLooping() async {
     if (_isDisposedOrNotInitialized) {
       return;

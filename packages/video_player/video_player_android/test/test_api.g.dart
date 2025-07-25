@@ -48,8 +48,11 @@ class _PigeonCodec extends StandardMessageCodec {
     }    else if (value is CreateMessage) {
       buffer.putUint8(137);
       writeValue(buffer, value.encode());
-    }    else if (value is MixWithOthersMessage) {
+    }    else if (value is QualityMessage) {
       buffer.putUint8(138);
+      writeValue(buffer, value.encode());
+    }    else if (value is MixWithOthersMessage) {
+      buffer.putUint8(139);
       writeValue(buffer, value.encode());
     } else {
       super.writeValue(buffer, value);
@@ -78,6 +81,8 @@ class _PigeonCodec extends StandardMessageCodec {
       case 137: 
         return CreateMessage.decode(readValue(buffer)!);
       case 138: 
+        return QualityMessage.decode(readValue(buffer)!);
+      case 139: 
         return MixWithOthersMessage.decode(readValue(buffer)!);
       default:
         return super.readValueOfType(type, buffer);
@@ -120,6 +125,8 @@ abstract class TestHostVideoPlayerApi {
   void setDub(DubMessage msg);
 
   void restorePlayerSurface(TextureMessage msg);
+
+  void setQuality(QualityMessage msg);
 
   static void setUp(TestHostVideoPlayerApi? api, {BinaryMessenger? binaryMessenger, String messageChannelSuffix = '',}) {
     messageChannelSuffix = messageChannelSuffix.isNotEmpty ? '.$messageChannelSuffix' : '';
@@ -508,6 +515,31 @@ abstract class TestHostVideoPlayerApi {
               'Argument for dev.flutter.pigeon.video_player_android.AndroidVideoPlayerApi.restorePlayerSurface was null, expected non-null TextureMessage.');
           try {
             api.restorePlayerSurface(arg_msg!);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          }          catch (e) {
+            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          }
+        });
+      }
+    }
+    {
+      final BasicMessageChannel<Object?> pigeonVar_channel = BasicMessageChannel<Object?>(
+          'dev.flutter.pigeon.video_player_android.AndroidVideoPlayerApi.setQuality$messageChannelSuffix', pigeonChannelCodec,
+          binaryMessenger: binaryMessenger);
+      if (api == null) {
+        _testBinaryMessengerBinding!.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(pigeonVar_channel, null);
+      } else {
+        _testBinaryMessengerBinding!.defaultBinaryMessenger.setMockDecodedMessageHandler<Object?>(pigeonVar_channel, (Object? message) async {
+          assert(message != null,
+          'Argument for dev.flutter.pigeon.video_player_android.AndroidVideoPlayerApi.setQuality was null.');
+          final List<Object?> args = (message as List<Object?>?)!;
+          final QualityMessage? arg_msg = (args[0] as QualityMessage?);
+          assert(arg_msg != null,
+              'Argument for dev.flutter.pigeon.video_player_android.AndroidVideoPlayerApi.setQuality was null, expected non-null QualityMessage.');
+          try {
+            api.setQuality(arg_msg!);
             return wrapResponse(empty: true);
           } on PlatformException catch (e) {
             return wrapResponse(error: e);

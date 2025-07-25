@@ -224,4 +224,9 @@ class AndroidVideoPlayer extends VideoPlayerPlatform {
   Future<void> restorePlayerSurface(int textureId) {
     return _api.restorePlayerSurface(TextureMessage(textureId: textureId));
   }
+
+  @override
+  Future<void> setVideoQuality(int textureId, int quality) {
+    return _api.setQuality(QualityMessage(textureId: textureId, quality: quality));
+  }
 }

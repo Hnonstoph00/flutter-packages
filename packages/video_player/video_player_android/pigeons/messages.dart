@@ -71,6 +71,12 @@ class CreateMessage {
   Map<String, String> httpHeaders;
 }
 
+class QualityMessage {
+  QualityMessage(this.textureId, this.quality);
+  int textureId;
+  int quality;
+}
+
 class MixWithOthersMessage {
   MixWithOthersMessage(this.mixWithOthers);
   bool mixWithOthers;
@@ -94,4 +100,5 @@ abstract class AndroidVideoPlayerApi {
   void setMixWithOthers(MixWithOthersMessage msg);
   void setDub(DubMessage msg);
   void restorePlayerSurface(TextureMessage msg);
+  void setQuality(QualityMessage msg);
 }

@@ -134,6 +134,11 @@ abstract class VideoPlayerPlatform extends PlatformInterface {
   Future<void> restorePlayerSurface(int textureId) {
     throw UnimplementedError('restorePlayerSurface() has not been implemented.');
   }
+
+  ///set video quality
+  Future<void> setVideoQuality(int textureId, int quality) {
+    throw UnimplementedError('setVideoQuality() has not been implemented.');
+  }
 }
 
 class _PlaceholderImplementation extends VideoPlayerPlatform {}
