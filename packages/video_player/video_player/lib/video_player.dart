@@ -518,6 +518,8 @@ class VideoPlayerController extends ValueNotifier<VideoPlayerValue> {
           } else {
             value = value.copyWith(isPlaying: event.isPlaying);
           }
+        case VideoEventType.qualityVideoChange:
+          value = value.copyWith(size: event.size);
         case VideoEventType.unknown:
           break;
       }

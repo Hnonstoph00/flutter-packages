@@ -30,4 +30,6 @@ interface VideoPlayerCallbacks {
   void onError(@NonNull String code, @Nullable String message, @Nullable Object details);
 
   void onIsPlayingStateUpdate(boolean isPlaying);
+
+  void onQualityChange(int width, int height);
 }

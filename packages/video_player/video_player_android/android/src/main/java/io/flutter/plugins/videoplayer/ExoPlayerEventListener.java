@@ -88,6 +88,11 @@ final class ExoPlayerEventListener implements Player.Listener {
   }
 
   @Override
+  public void onVideoSizeChanged(VideoSize videoSize) {
+    events.onQualityChange(videoSize.width, videoSize.height);
+  }
+
+  @Override
   public void onPlayerError(@NonNull final PlaybackException error) {
     setBuffering(false);
     if (error.errorCode == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) {

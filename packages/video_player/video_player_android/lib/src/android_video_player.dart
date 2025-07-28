@@ -185,6 +185,11 @@ class AndroidVideoPlayer extends VideoPlayerPlatform {
             eventType: VideoEventType.isPlayingStateUpdate,
             isPlaying: map['isPlaying'] as bool,
           );
+        case 'videoQualityChange':
+          return VideoEvent(
+            eventType: VideoEventType.qualityVideoChange,
+            size: Size((map['width'] as num?)?.toDouble() ?? 0.0, (map['height'] as num?)?.toDouble() ?? 0.0),
+          );
         default:
           return VideoEvent(eventType: VideoEventType.unknown);
       }

@@ -49,12 +49,20 @@ abstract class VideoPlayerPlatform extends PlatformInterface {
   }
 
   /// Creates an instance of a video player and returns its textureId.
-  Future<int?> create(DataSource dataSource, {HlsCacheConfig? hlsCacheConfig, BufferingConfig? bufferingConfig}) {
+  Future<int?> create(
+    DataSource dataSource, {
+    HlsCacheConfig? hlsCacheConfig,
+    BufferingConfig? bufferingConfig,
+  }) {
     throw UnimplementedError('create() has not been implemented.');
   }
 
   /// Pre-cache video
-  Future<bool?> preCache(DataSource dataSource, {HlsCacheConfig? hlsCacheConfig, BufferingConfig? bufferingConfig}) {
+  Future<bool?> preCache(
+    DataSource dataSource, {
+    HlsCacheConfig? hlsCacheConfig,
+    BufferingConfig? bufferingConfig,
+  }) {
     throw UnimplementedError('preCache() has not been implemented.');
   }
 
@@ -132,7 +140,9 @@ abstract class VideoPlayerPlatform extends PlatformInterface {
   /// That make blank screen
   /// Use this function to manually restore its state
   Future<void> restorePlayerSurface(int textureId) {
-    throw UnimplementedError('restorePlayerSurface() has not been implemented.');
+    throw UnimplementedError(
+      'restorePlayerSurface() has not been implemented.',
+    );
   }
 
   ///set video quality
@@ -331,6 +341,9 @@ enum VideoEventType {
   /// This event is fired when the video starts or pauses due to user actions or
   /// phone calls, or other app media such as music players.
   isPlayingStateUpdate,
+
+  /// event when quality video change
+  qualityVideoChange,
 
   /// An unknown event has been received.
   unknown,
