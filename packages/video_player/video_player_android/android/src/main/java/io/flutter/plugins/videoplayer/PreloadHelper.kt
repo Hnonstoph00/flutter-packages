@@ -8,7 +8,11 @@ import androidx.media3.common.Player
 import androidx.media3.common.StreamKey
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.ExoDatabaseProvider
+import androidx.media3.datasource.DataSource
+import androidx.media3.datasource.DataSpec
+import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultDataSourceFactory
+import androidx.media3.datasource.TransferListener
 import androidx.media3.datasource.cache.Cache
 import androidx.media3.datasource.cache.CacheDataSink
 import androidx.media3.datasource.cache.CacheDataSource
@@ -71,16 +75,15 @@ class PreloadHelper(private val context: Context, private val uri: Uri) {
 
     companion object {
         private const val TAG = "CacheDataSource"
-        private const val PRE_CACHE_SIZE = 1 * 200 * 1024L // 1 MB
+        private const val PRE_CACHE_SIZE = 1 * 4000 * 1024L // 4 MB
     }
 }
-
 
 
 @UnstableApi
 object CacheManager {
     private const val TAG = "CacheManager"
-    const val CACHE_SIZE = 100L * 1024 * 1024 // 100 MB
+    const val CACHE_SIZE = 500L * 1024 * 1024 // 500 MB
     private var cacheInstance: SimpleCache? = null
 
     fun getCache(context: Context): Cache {
@@ -100,8 +103,46 @@ object CacheManager {
 
 @UnstableApi
 class CacheDataSourceFactoryManager(private val context: Context) {
-    private val upstreamDataSourceFactory: DefaultDataSourceFactory by lazy {
-        DefaultDataSourceFactory(context, "Android")
+    private val upstreamDataSourceFactory: DataSource.Factory by lazy {
+        DefaultDataSource.Factory(context).setTransferListener(
+            object : TransferListener {
+                override fun onBytesTransferred(
+                    source: DataSource,
+                    dataSpec: DataSpec,
+                    isNetwork: Boolean,
+                    bytesTransferred: Int
+                ) {
+                    Log.d("TransferListener", "onBytesTransferred: ${source.uri.toString()}, from network: $isNetwork, $bytesTransferred}")
+                }
+
+                override fun onTransferEnd(
+                    source: DataSource,
+                    dataSpec: DataSpec,
+                    isNetwork: Boolean
+                ) {
+                    Log.d("TransferListener", "onTransferEnd: ${source.uri.toString()}, from network: $isNetwork")
+
+                }
+
+
+                override fun onTransferInitializing(
+                    source: DataSource,
+                    dataSpec: DataSpec,
+                    isNetwork: Boolean
+                ) {
+                    Log.d("TransferListener", "onTransferInitializing: ${source.uri.toString()}, from network: $isNetwork")
+                }
+
+                override fun onTransferStart(
+                    source: DataSource,
+                    dataSpec: DataSpec,
+                    isNetwork: Boolean
+                ) {
+                    Log.d("TransferListener", "onTransferInitializing: ${source.uri.toString()}, from network: $isNetwork")
+                }
+            }
+
+        )
     }
 
     companion object {
@@ -111,7 +152,7 @@ class CacheDataSourceFactoryManager(private val context: Context) {
             if (cacheDataSourceFactory == null) {
                 cacheDataSourceFactory = CacheDataSource.Factory()
                     .setCache(cache)
-                    .setUpstreamDataSourceFactory(DefaultDataSourceFactory(context, "Android"))
+                    .setUpstreamDataSourceFactory(CacheDataSourceFactoryManager(context).upstreamDataSourceFactory)
                     .setCacheWriteDataSinkFactory(
                         CacheDataSink.Factory()
                             .setCache(cache)
