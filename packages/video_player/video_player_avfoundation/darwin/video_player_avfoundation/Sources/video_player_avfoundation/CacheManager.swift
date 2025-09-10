@@ -62,7 +62,7 @@ enum VideoQuality {
         self.cache = storage
         
         let documentDirectory = try? FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-        print("documentDirectory", documentDirectory?.path ?? "--")
+        // print("documentDirectory", documentDirectory?.path ?? "--")
         super.init()
         
         addPlaylistHandler()
@@ -88,11 +88,11 @@ enum VideoQuality {
               let urlString = encodedURLString.removingPercentEncoding,
               let url = URL(string: urlString)
         else {
-            print("Error: bad url")
+            // print("Error: bad url")
             return nil
         }
         guard ["m3u8", "ts", "mp4", "m4s", "m4a", "m4v"].contains(url.pathExtension) else {
-            print("Error: unsupported mime type")
+            // print("Error: unsupported mime type")
             return nil
         }
         return url
@@ -125,7 +125,7 @@ enum VideoQuality {
             else {
                 return completion(GCDWebServerErrorResponse(statusCode: 400))
             }
-            print("LOG + original url \(originURL)")
+            // print("LOG + original url \(originURL)")
             if originURL.pathExtension == "m3u8" {
                 // Return cached m3u8 manifest
                 if let item = self.cachedDataItem(for: originURL),
@@ -164,7 +164,7 @@ enum VideoQuality {
                 } else if lastPath.contains("1080") {
                     currentVideoQuality = VideoQuality.p1080
                 } else {
-                    print("⚪️ Unknown quality")
+                    // print("⚪️ Unknown quality")
                 }
                 
                 // Return cached segment
@@ -211,7 +211,7 @@ enum VideoQuality {
         // Step 1: Cache index.m3u8 if needed
         func cacheIndexIfNeeded(completion: @escaping () -> Void) {
             if let _ = cachedDataItem(for: originURL) {
-                print("✅ index.m3u8 already cached")
+                // print("✅ index.m3u8 already cached")
                 completion()
                 return
             }
@@ -226,7 +226,7 @@ enum VideoQuality {
 
                 let item = CacheItem(data: data, url: originURL, mimeType: mimeType)
                 self.saveCacheDataItem(item)
-                print("✅ Cached index.m3u8")
+                // print("✅ Cached index.m3u8")
                 completion()
             }.resume()
         }
@@ -234,7 +234,7 @@ enum VideoQuality {
         // Step 2: Cache quality.m3u8 if needed
         func cacheQualityIfNeeded(completion: @escaping () -> Void) {
             if let _ = cachedDataItem(for: qualityM3U8URL) {
-                print("✅ \(qualityPrefix).m3u8 already cached")
+                // print("✅ \(qualityPrefix).m3u8 already cached")
                 completion()
                 return
             }
@@ -249,7 +249,7 @@ enum VideoQuality {
 
                 let item = CacheItem(data: data, url: qualityM3U8URL, mimeType: mimeType)
                 self.saveCacheDataItem(item)
-                print("✅ Cached \(qualityPrefix).m3u8")
+                // print("✅ Cached \(qualityPrefix).m3u8")
                 completion()
             }.resume()
         }
@@ -257,7 +257,7 @@ enum VideoQuality {
         // Step 3: Cache ts segment if needed
         func cacheFirstTSIfNeeded() {
             if let _ = cachedDataItem(for: tsSegmentURL) {
-                print("✅ \(tsSegmentURL.lastPathComponent) already cached")
+                // print("✅ \(tsSegmentURL.lastPathComponent) already cached")
                 return
             }
 
@@ -268,7 +268,7 @@ enum VideoQuality {
 
                 let item = CacheItem(data: data, url: tsSegmentURL, mimeType: mimeType)
                 self.saveCacheDataItem(item)
-                print("✅ Cached \(tsSegmentURL.lastPathComponent)")
+                // print("✅ Cached \(tsSegmentURL.lastPathComponent)")
             }.resume()
         }
 
@@ -328,7 +328,7 @@ enum VideoQuality {
         guard let scheme = originURL.scheme,
               let host = originURL.host
         else {
-            print("Error: bad url")
+            // print("Error: bad url")
             return nil
         }
         
@@ -373,7 +373,7 @@ enum VideoQuality {
         guard let playerItem = currentPlayerItem,
               let group = playerItem.asset.mediaSelectionGroup(forMediaCharacteristic: .audible) else { return }
         group.options.map { element in
-            print("LOG + supposet lang \(element.displayName)")
+            // print("LOG + supposet lang \(element.displayName)")
         }
         
         if let selectedOption = group.options.first(where: { $0.displayName == displayName }) {
@@ -389,16 +389,16 @@ public extension CacheManager {
         currentPlayerItem?.preferredForwardBufferDuration = 10
         
         guard let asset = currentPlayerItem?.asset as? AVURLAsset else {
-            print("LOG + keep access")
+            // print("LOG + keep access")
             return currentPlayerItem
         }
 
 //      Load audioSources available
         asset.loadValuesAsynchronously(forKeys: ["availableMediaCharacteristicsWithMediaSelectionOptions"]) {
-            print("LOG + keep access 2")
+            // print("LOG + keep access 2")
 
         }
-        print("LOG + keep access 3")
+        // print("LOG + keep access 3")
 
         return currentPlayerItem
     }
@@ -414,7 +414,7 @@ public extension CacheManager {
     }
     
     @objc func setDubbing(_ name: String) {
-        print("LOG + set dubbing \(name)")
+        // print("LOG + set dubbing \(name)")
         selectAudioTrack(displayName: name)
     }
 }
